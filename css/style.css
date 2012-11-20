@@ -1,6 +1,7 @@
 body {
   font-family: Lato;
   font-weight: 300;
+  font-size: 17px;
   color: #333;
   text-shadow: 0 1px 1px #fff;
   margin-bottom: 50px;
@@ -89,4 +90,13 @@ ul.projects li a:hover {
 
 .thumbnail:hover {
   opacity: 0.8;
+}
+
+.photo-wrapper {
+  text-align: center;
+  padding: 20px;
+}
+
+.photo {
+  border: 1px solid #888;
 }
