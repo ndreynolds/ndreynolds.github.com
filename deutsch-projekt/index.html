@@ -1,0 +1,233 @@
+<!doctype html5>
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="style.css"/>
+    <title>Berliner Zeitreisender</title>
+    <script src="js/jquery.js"></script>
+    <script src="js/d3.js"></script>
+    <script src="js/underscore.js"></script>
+    <script src="js/graphic.js"></script>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="top-header">
+        <a href="#">E-Paper</a>
+        <a href="#">Hilfe</a>
+        <a href="#">Weitere Angebote</a>
+        <a class="impressum" href="#">Impressum / Was ist das?</a>
+      </div>
+      <div class="header">
+        <h2>Berliner Zeitreisender</h2>
+        <h3 class="slogan">Deutschlands einzige anachronistiche Zeitung</h3>
+        <h4>Montag, 1. August 1932</h4>
+        <div class="header-nav">
+          <a class="active" href="#">POLITIK</a> |
+          <a href="#">MEDIEN</a> |
+          <a href="#">GESELLSCHAFT</a> |
+          <a href="#">WIRTSCHAFT</a> |
+          <a href="#">GESUNDHEIT</a> |
+          <a href="#">WISSENSCHAFT</a>
+        </div>
+        <div class="header-suche">
+          <span class="sozial sozial-facebook">Facebook</span>
+          <span class="sozial sozial-twitter">Twitter</span>
+          <input class="search" placeholder="Suche" type="text"/>
+        </div>
+      </div>
+      <div class="content">
+        <h2>Anstieg der Nationalsozialisten</h2>
+        <p><span class="content-author"><em><small>von</small> Nick Reynolds</em></span></p>
+        <div class="columns">
+          <div class="content-media">
+            <img alt="Propaganda zur Wahl" src="img/wahlplakate.jpg"/>
+          </div>
+          <div class="content-graph">
+            <div id="graph">
+            </div>
+            <a class="toggle-btn active" data-url="sept1930.csv" href="#">Sept. 1930</a><br>
+            <a class="toggle-btn" data-url="juli1932.csv" href="#">Juli. 1932</a>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="content-text">
+            <p><span class="content-city"><em>Berlin &mdash;</em></span> 
+            Gestern hat das Volk gewählt. Sie haben die Nationalsozialisten
+            entschieden, aber ohne Mehrheit. 607 Sitze wurden geteilt&mdash;die
+            NDSP hat 230 genommen, die SPD 133, die KPD 89.  Seit der Wahl
+            September 1930 haben die Nationalsozialisten ihre Stimmenzahl
+            verdoppelt (13 Millionen gegen 6 Millionen).
+
+            <p>Hier bis Ende gibt es nur Füller. Auch gibt es niemanden, der
+            den Schmerz an sich liebt, sucht oder wünscht, nur, weil er Schmerz
+            ist, es sei denn, es kommt zu zufälligen Umständen, in denen Mühen
+            und Schmerz ihm große Freude bereiten können.  Um ein triviales
+            Beispiel zu nehmen, wer von uns unterzieht sich je anstrengender
+            körperlicher Betätigung, außer um Vorteile daraus zu ziehen? Aber
+            wer hat irgend ein Recht, einen Menschen zu tadeln, der die
+            Entscheidung trifft, eine Freude zu genießen, die keine
+            unangenehmen Folgen hat, oder einen, der Schmerz vermeidet, welcher
+            keine daraus resultierende Freude nach sich zieht? Auch gibt es
+            niemanden, der den Schmerz an sich liebt, sucht oder wünscht, nur,
+            weil er Schmerz ist, es sei denn, es kommt zu zufälligen Umständen,
+            in denen Mühen und Schmerz ihm große Freude bereiten können. Um ein
+            triviales Beispiel zu nehmen, wer von uns unterzieht sich je
+            anstrengender körperlicher Betätigung, außer um Vorteile daraus zu
+            ziehen? 
+            
+            <p>Aber wer hat irgend ein Recht, einen Menschen zu tadeln, der die
+            Entscheidung trifft, eine Freude zu genießen, die keine unangenehmen
+            Folgen hat, oder einen, der Schmerz vermeidet, welcher keine daraus
+            resultierende Freude nach sich zieht? Auch gibt es niemanden, der den
+            Schmerz an sich liebt, sucht oder wünscht, nur, weil er Schmerz ist, es
+            sei denn, es kommt zu zufälligen Umständen, in denen Mühen und Schmerz
+            ihm große Freude bereiten können. Um ein triviales Beispiel zu nehmen,
+            wer von uns unterzieht sich je anstrengender körperlicher Betätigung,
+            außer um Vorteile daraus zu ziehen? Aber wer hat irgend ein Recht,
+            einen Menschen zu tadeln, der die Entscheidung trifft, eine Freude zu
+            genießen, die keine unangenehmen Folgen hat, oder einen, der Schmerz
+            vermeidet, welcher keine daraus resultierende Freude nach sich zieht?
+            Auch gibt es niemanden, der den Schmerz an sich liebt, sucht oder
+            wünscht, nur, weil er Schmerz ist, es sei denn, es kommt zu zufälligen
+            Umständen, in denen Mühen und Schmerz ihm große Freude bereiten können.
+            Um ein triviales Beispiel zu nehmen, wer von uns unterzieht sich je
+            anstrengender körperlicher Betätigung, außer um Vorteile daraus zu
+            ziehen? 
+            
+            <p>Aber wer hat irgend ein Recht, einen Menschen zu tadeln, der die
+            Entscheidung trifft, eine Freude zu genießen, die keine unangenehmen
+            Folgen hat, oder einen, der Schmerz vermeidet, welcher keine daraus
+            resultierende Freude nach sich zieht? Auch gibt es niemanden, der den
+            Schmerz an sich liebt, sucht oder wünscht, nur, weil er Schmerz ist, es
+            sei denn, es kommt zu zufälligen Umständen, in denen Mühen und Schmerz
+            ihm große Freude bereiten können. Um ein triviales Beispiel zu nehmen,
+            wer von uns unterzieht sich je anstrengender körperlicher Betätigung,
+            außer um Vorteile daraus zu ziehen? Aber wer hat irgend ein Recht,
+            einen Menschen zu tadeln, der die Entscheidung trifft, eine Freude zu
+            genießen, die keine unangenehmen Folgen hat, oder einen, der Schmerz
+            vermeidet, welcher keine daraus resultierende Freude nach sich zieht?
+            
+            <p>Auch gibt es niemanden, der den Schmerz an sich liebt, sucht oder
+            wünscht, nur, weil er Schmerz ist, es sei denn, es kommt zu zufälligen
+            Umständen, in denen Mühen und Schmerz ihm große Freude bereiten können.
+            Um ein triviales Beispiel zu nehmen, wer von uns unterzieht sich je
+            anstrengender körperlicher Betätigung, außer um Vorteile daraus zu
+            ziehen? Aber wer hat irgend ein Recht, einen Menschen zu tadeln, der
+            die Entscheidung trifft, eine Freude zu genießen, die keine
+            unangenehmen Folgen hat, oder einen, der Schmerz vermeidet, welcher
+            keine daraus resultierende Freude nach sich zieht?  Auch gibt es
+            niemanden, der den Schmerz an sich liebt, sucht oder wünscht, nur, weil
+            er Schmerz ist, es sei denn, es kommt zu zufälligen Umständen, in denen
+            Mühen und Schmerz ihm große Freude bereiten können.  Um ein triviales
+            Beispiel zu nehmen,
+          </div>
+          <div class="content-sidebar">
+            <div class="empfehlungen">
+              TRENDS BEI TWITTER <img src="img/twitter-2.png" alt="twitter"/>
+              <ul>
+                <li>
+                  <div>
+                    <span class="twitter-name">Bertolt Brecht</span>
+                    <span class="twitter-handle">@brecht42</span>
+                  </div>
+                  Wer die Wahrheit nicht weiß, der ist bloß ein Dummkopf. Aber
+                  wer sie weiß und sie eine Lüge nennt, der ist ein Verbrecher.
+                  <span class="twitter-link">#wahl1932</span>
+                </li>
+                <li>
+                  <div>
+                    <span class="twitter-name">Adolf Hitler</span>
+                    <span class="twitter-handle">@eigentlichAdolfHitler</span>
+                  </div>
+                  eine großartige Zukunft erwartet uns! 
+                  <span class="twitter-link">#wahl1932</span>
+                  <span class="twitter-link">#nsdap</span>
+                  <span class="twitter-link">#den-letzten-stoß</span>
+                  <span class="twitter-link">#juden-ungluck</span>
+                </li>
+                <li>
+                  <div>
+                    <span class="twitter-name">Johann Doemann</span>
+                    <span class="twitter-handle">@ein_deutscher</span>
+                  </div>
+                  ich will ein sicheres Einkommen haben. wenn die NSDAP es geben kann,
+                  stimme ich mit sie.
+                  <span class="twitter-link">#wahl1932</span>
+                  <span class="twitter-link">#arbeit-und-brot</span>
+                </li>
+              </ul>
+            </div>
+            <div class="werbung">
+              <img alt="werbung" src="img/werbung.jpg"/>
+              WERBUNG
+            </div>
+            <div class="empfehlungen">
+              WIR EMPFEHLEN
+              <ul>
+                <li>Wirtschaftskrise in den USA</li>
+                <li>Langs M in 3D— ein Meisterwerk oder nicht?</li>
+                <li>Mein Kampf erzählt Hitlers Begründung</li>
+                <li>Salzmarsch von Ghandi</li>
+                <li>Google Maps und die Privatsphäre</li>
+              </ul>
+            </div>
+            <div class="empfehlungen">
+              DIESEN ARTIKEL...
+              <ul>
+                <li>
+                  <span class="sozial sozial-facebook">
+                    Bei Facebook empfehlen
+                  </span>
+                </li>
+                <li>
+                  <span class="sozial sozial-gplus">
+                    Bei Google+ empfehlen
+                  </span>
+                </li>
+                <li>
+                  <span class="sozial sozial-twitter">
+                    Twittern
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="impressum-popover" style="display:none">
+      <a href="#" class="close">SCHLIEßEN [X]</a>
+      <h2>WAS IST DAS?</h2>
+      <p>Ein Projekt von Nick Reynolds.
+
+      <p>Hier ist eine fiktionale Zeitung, um die Wirkung von
+      Informationstechnologie auf Gesellschaft und Politik mitzuspielen. Es ist
+      ein kreatives Projekt für meinen Deutschkurs.
+
+      <p>Es ist eine moderne Interpretation von <a class="interpretation" href="http://zefys.staatsbibliothek-berlin.de/dfg-viewer/?set%5Bmets%5D=http%3A%2F%2Fzefys.staatsbibliothek-berlin.de%2Foai%2F%3Ftx_zefysoai_pi1%255Bidentifier%255D%3D6e10507e-08fb-46d2-b562-03907759e14d">dieser Zeitung</a>
+
+      <p>Mit diesem Projekt will ich auf keine Weise die Nazis feiern, sondern
+      nur der Anstieg der Nazis besser zu verstehen, und in einem anderen
+      Zusammenhang bringen.
+    </div>
+    <div class="popover" style="display:none"></div>
+    <script id="popover-inner" type="text/html">
+      <div class="popover-inner">
+        <img src="<%= image %>"/>
+        <h3><%= name %> (<%= abv %>)</h3>
+        <div>Gründung – <%= formation %></div>
+        <div>Vorsitzender – <%= leader %></div>
+        <table>
+          <tr>
+            <td>Stimmen</td>
+            <td><%= votes %> (<%= votesPercent %>%)</td>
+          </tr>
+          <tr>
+            <td>Sitze</td>
+            <td><%= seats %> (<%= seatsPercent %>%)</td>
+          </tr>
+        </table>
+      </div>
+    </script>
+  </body>
+</html>
