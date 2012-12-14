@@ -2,7 +2,9 @@ $(function() {
 
   var popoverTpl = _.template($('#popover-inner').html());
 
-  var partyData, timer, current = 'sept1930.csv';
+  var partyData, 
+      timer, 
+      current = 'sept1930.csv';
 
   var totals = {
     'sept1930.csv': {
@@ -20,7 +22,7 @@ $(function() {
       radius = Math.min(width, height) / 2;
 
   var color = d3.scale.ordinal()
-    .range(["#af8748", "#d70029", "#8b0000", "#1857a3", 
+    .range(["#af8748", "#d70029", "#8b0000", "#1857a3",
             "#555555", "#d0743c", "#ff8c00", "#1f7d50",
             "#933b58", "#facc2a", "#3fa0c4"]);
 
@@ -70,8 +72,8 @@ $(function() {
       .attr("dy", ".35em")
       .style("text-anchor", "middle")
       .on('mouseover', onMouseover)
-      .text(function(d) {
-        return d.value > 30000 ? d.data.partei : "";
+      .text(function(d, i) {
+        return i < 7 ? d.data.partei : "";
       });
   }
 
