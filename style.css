@@ -17,6 +17,10 @@ a {
   text-decoration: underline;
 }
 
+a img {
+  border: none;
+}
+
 canvas#life {
   position: absolute;
   z-index: -1;
