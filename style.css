@@ -18,7 +18,6 @@ a {
 }
 
 canvas#life {
-  float: left;
   position: absolute;
   z-index: -1;
 }
@@ -29,11 +28,13 @@ canvas#life {
   text-decoration: none;
 }
 
+.header {
+  text-align: center;
+}
 
 .content {
   width: 650px;
   margin: 0 auto;
-  text-align: center;
 }
 
 .footer {

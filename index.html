@@ -10,10 +10,12 @@
     <div class="content">
       <canvas id="life" width="650" height="150"></canvas> 
 
-      <h2>Hi &mdash; I'm Nick Reynolds.</h2>
-      <p>I'm a Software Developer from East Lansing, Michigan.
-      <p>Get in touch with me at 
-      <a href="mailto:ndreynolds@gmail.com" class="email">ndreynolds@gmail.com</a>.
+      <div class="header">
+        <h2>Hi &mdash; I'm Nick Reynolds.</h2>
+        <p>I'm a Software Developer from East Lansing, Michigan.
+        <p>Get in touch with me at 
+        <a href="mailto:ndreynolds@gmail.com" class="email">ndreynolds@gmail.com</a>.
+      </div>
 
       <div class="projects-header"> 
         <h3>A Few Things I've Made...</h3>
@@ -33,10 +35,14 @@
           <a class="project" href="http://arcs.cal.msu.edu">ARCS</a>
           is an open-source web platform for humanites-based research. Create,
           relate, organize and search digitized primary evidence.
+
           <img width="600" src="img/arcs-viewer.png" alt="ARCS Viewer"/>
+
           <p>Under the covers, it's a web application built on Backbone.js and
           a RESTful CakePHP backend that persists to SOLR and MySQL.
+
           <img width="600" src="img/arcs-search.png" alt="ARCS Search"/>
+
           <p>Browse the source code on 
           <a class="project" href="http://github.com/ndreynolds/arcs">Github</a>
         </li>
@@ -73,6 +79,12 @@
     </div>
     <script type="text/javascript">
       (function() {
+        function canvasSupported(){
+          var elem = document.createElement('canvas');
+          return !!(elem.getContext && elem.getContext('2d'));
+        }
+        if (!canvasSupported()) return;
+
         var ctx = document.getElementById('life').getContext('2d');
         ctx.fillStyle = "#eee";
 
