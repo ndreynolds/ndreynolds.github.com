@@ -1,5 +1,5 @@
 body {
-  font-family: Lato;
+  font-family: "open-sans", sans-serif;
   font-weight: 300;
   font-size: 17px;
   color: #333;
@@ -74,12 +74,15 @@ canvas#life {
 }
 
 .projects li a {
+  color: #222;
   font-weight: 400;
-  font-size: 95%;
-  color: #444;
   text-decoration: none;
 }
 
 .projects li a:hover {
   text-decoration: underline;
+}
+
+.typekit-badge {
+  display: none !important;
 }
