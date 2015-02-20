@@ -1,0 +1,12 @@
+*.hi
+*.o
+
+# Cabal sandbox
+cabal.sandbox.config
+.cabal-sandbox
+
+# Compiled and cached Hakyll files
+site
+_site
+_cache
+dist

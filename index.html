@@ -1,122 +1,88 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
-    <title>Nick Reynolds, Software Developer</title>
-    <script type="text/javascript" src="//use.typekit.net/uei3hgb.js"></script>
-    <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
-    <script type="text/javascript" src="life.js"></script>
-    <link rel="stylesheet" href="style.css" type="text/css">
-  </head>
-  <body>
-    <div class="content">
-      <canvas id="life" width="650" height="150"></canvas> 
+<div class="light">
+  <div class="container">
+    <div class="row section">
+      <hr>
+      <h4 class="section-title">Posts</h4>
+      <hr>
+      $partial("templates/post-list.html")$
+      <a href="/archive.html">View All</a>
+    </div>
 
-      <div class="header">
-        <h2>Hi &mdash; I'm Nick Reynolds.</h2>
-        <p>I'm a Software Developer from East Lansing, Michigan.
-        <p>Get in touch with me at 
-        <a href="mailto:ndreynolds@gmail.com" class="email">ndreynolds@gmail.com</a>.
+    <div class="row section">
+      <hr>
+      <h4 class="section-title text-center">Open Source Projects</h4>
+      <hr>
+      <div class="row">
+        <div class="one-half column">
+          <img src="/images/flathead.png" width="100%" alt="Flathead">
+        </div>
+        <div class="one-half column">
+          <h5>Flathead</h5>
+          <p>
+            Flathead is a tiny, portable JavaScript (ECMA-262) interpreter written in C.
+          </p>
+          <a class="button" href="https://github.com/ndreynolds">Source Code</a>
+        </div>
       </div>
-
-      <div class="projects-header"> 
-        <h3>A Few Things I've Made...</h3>
+      <div class="row">
+        <div class="one-half column">
+          <img src="/images/arcs-search.png" width="100%" alt="Flathead">
+        </div>
+        <div class="one-half column">
+          <h5>Enjoin</h5>
+          <p>
+            ARCS is an open-source web platform for humanites-based research.
+            Create, relate, organize and search digitized primary evidence.
+          </p>
+          <a class="button" href="https://github.com/ndreynolds">Source Code</a>
+        </div>
       </div>
-
-      <ul class="projects">
-        <li>
-          <a class="project" href="http://github.com/ndreynolds/flathead">Flathead</a>
-          is a JavaScript interpreter written in C.
-          <a href="http://github.com/ndreynolds/flathead">
-            <img width="600" src="img/flathead.png" alt="Flathead REPL"/>
+      <div class="row">
+        <div class="one-half column">
+          <img src="/images/arcs-viewer.png" width="100%" alt="Flathead">
+        </div>
+        <div class="one-half column">
+          <h5>ARCS</h5>
+          <p>
+            ARCS is an open-source web platform for humanites-based research.
+            Create, relate, organize and search digitized primary evidence.
+          </p>
+          <a class="button" href="https://github.com/ndreynolds">
+            <i class="fa fa-lg fa-link"></i>
+            Site
           </a>
-        </li>
-
-        <li>
-          <p><img src="img/arcs.ico" alt="ARCS Icon"/>
-          <a class="project" href="http://arcs.cal.msu.edu/about">ARCS</a>
-          is an open-source web platform for humanites-based research. Create,
-          relate, organize and search digitized primary evidence.
-
-          <img width="600" src="img/arcs-viewer.png" alt="ARCS Viewer"/>
-
-          <p>Under the covers, it's a web application built on Backbone.js and
-          a RESTful CakePHP backend that persists to SOLR and MySQL.
-
-          <img width="600" src="img/arcs-search.png" alt="ARCS Search"/>
-
-          <p>Browse the source code on 
-          <a class="project" href="http://github.com/ndreynolds/arcs">Github</a>
-        </li>
-
-        <li>
-          I drew <a class="project" href="/canvas-fractals">Julia Set Fractals</a> 
-          using JavaScript and the HTML5 Canvas API. Fair warning, it's not
-          CPU-friendly.  See the source on 
-          <a class="project" href="http://github.com/ndreynolds/canvas-fractals">Github</a>
-        </li>
-
-        <li>
-          <p><a class="project" href="http://github.com/ndreynolds/hopper">Hopper</a> 
-          is an experimental distributed issue tracker. It's built in Python and uses 
-          Git for versioning.
-        </li>
-
-        <li>
-          <a class="project" href="http://github.com/ndreynolds/vim-cakephp">vim-cakephp</a>
-          is a Vim plugin for CakePHP. I returned from the depths of VimScript
-          with a tool to quickly navigate the MVC structure.
-        </li>
-      </ul>
+          <a class="button" href="https://github.com/ndreynolds">
+            <i class="fa fa-lg fa-github"></i>
+            Source Code
+          </a>
+        </div>
+      </div>
     </div>
-    <div class="footer">
-      <p>
-        &copy; 2013 Nick Reynolds
-      </p>
-      <p>
-        <a href="mailto:ndreynolds@gmail.com">Email</a> /
-        <a href="http://github.com/ndreynolds">Github</a> /
-        <a href="http://ndreynolds.com">ndreynolds.com</a>
-      </p>
-    </div>
-    <script type="text/javascript">
-      (function() {
-        function canvasSupported(){
-          var elem = document.createElement('canvas');
-          return !!(elem.getContext && elem.getContext('2d'));
+  </div>
+</div>
+
+<script>
+  (function() {
+    document.getElementById('life').setAttribute('width', document.body.clientWidth);
+    window.ctx = document.getElementById('life').getContext('2d');
+    ctx.fillStyle = "#4090c7";
+
+    var width = 200;
+    var height = 100;
+    window.grid = initGrid(width, height);
+
+    function updateCanvas() {
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          drawCell(ctx, grid, x, y, 8);
         }
-        if (!canvasSupported()) return;
+      }
+    }
+    updateCanvas();
 
-        var ctx = document.getElementById('life').getContext('2d');
-        ctx.fillStyle = "#eee";
-
-        var grid = new Grid(130, 25);
-        var drawGrid = function(grid) {
-          grid.eachCell(function(cell) {
-            var x = cell.x * 5;
-            var y = cell.y * 5;
-            ctx[cell.alive ? 'fillRect' : 'clearRect'](x, y, 4, 4);
-          });
-        };
-
-        setInterval(function() {
-          grid.nextGeneration();
-          drawGrid(grid);
-        }, 200);
-      }());
-    </script>
-    <script type="text/javascript">
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-21708094-3']);
-      _gaq.push(['_trackPageview']);
-      (function() {
-        var ga = document.createElement('script'); 
-        ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 
-          'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; 
-        s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
-  </body>
-</html>
+    setInterval(function() {
+      grid = nextGeneration(grid);
+      updateCanvas();
+    }, 150);
+  }());
+</script>
