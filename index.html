@@ -19,24 +19,30 @@
         <div class="one-half column">
           <h5>Flathead</h5>
           <p>
-            Flathead is a tiny, portable JavaScript (ECMA-262) interpreter written in C.
+            Flathead is a tiny, portable JavaScript (ECMA-262) interpreter
+            written in C.
           </p>
-          <a class="button" href="https://github.com/ndreynolds">Source Code</a>
+          <a class="button" href="https://github.com/ndreynolds/flathead">
+            <i class="fa fa-lg fa-github"></i>
+            Source Code
+          </a>
         </div>
       </div>
-      <div class="row">
-        <div class="one-half column">
-          <img src="/images/arcs-search.png" width="100%" alt="Flathead">
-        </div>
-        <div class="one-half column">
-          <h5>Enjoin</h5>
-          <p>
-            ARCS is an open-source web platform for humanites-based research.
-            Create, relate, organize and search digitized primary evidence.
-          </p>
-          <a class="button" href="https://github.com/ndreynolds">Source Code</a>
-        </div>
-      </div>
+      <!-- <div class="row"> -->
+      <!--   <div class="one-half column"> -->
+      <!--   </div> -->
+      <!--   <div class="one-half column"> -->
+      <!--     <h5>Enjoin</h5> -->
+      <!--     <p> -->
+      <!--       Enjoin is a cross-platform database client built on top of -->
+      <!--       atom-shell and React.js. -->
+      <!--     </p> -->
+      <!--     <a class="button" href="https://github.com/ndreynolds/enjoin"> -->
+      <!--       <i class="fa fa-lg fa-github"></i> -->
+      <!--       Source Code -->
+      <!--     </a> -->
+      <!--   </div> -->
+      <!-- </div> -->
       <div class="row">
         <div class="one-half column">
           <img src="/images/arcs-viewer.png" width="100%" alt="Flathead">
@@ -47,11 +53,11 @@
             ARCS is an open-source web platform for humanites-based research.
             Create, relate, organize and search digitized primary evidence.
           </p>
-          <a class="button" href="https://github.com/ndreynolds">
+          <a class="button" href="http://arcs.cal.msu.edu/about">
             <i class="fa fa-lg fa-link"></i>
             Site
           </a>
-          <a class="button" href="https://github.com/ndreynolds">
+          <a class="button" href="https://github.com/ndreynolds/arcs">
             <i class="fa fa-lg fa-github"></i>
             Source Code
           </a>
@@ -63,26 +69,41 @@
 
 <script>
   (function() {
-    document.getElementById('life').setAttribute('width', document.body.clientWidth);
-    window.ctx = document.getElementById('life').getContext('2d');
+    var canvas = document.getElementById('life')
+    canvas.setAttribute('width', document.body.clientWidth);
+    
+    var ctx = canvas.getContext('2d');
     ctx.fillStyle = "#4090c7";
 
-    var width = 200;
-    var height = 100;
-    window.grid = initGrid(width, height);
+    var width = 200, height = 100;
+    window.grid = Life.initGrid(width, height);
+
+    var interval;
 
     function updateCanvas() {
       for (var y = 0; y < height; y++) {
         for (var x = 0; x < width; x++) {
-          drawCell(ctx, grid, x, y, 8);
+          window.Life.drawCell(ctx, grid, x, y, 8);
         }
       }
     }
-    updateCanvas();
 
-    setInterval(function() {
-      grid = nextGeneration(grid);
-      updateCanvas();
-    }, 150);
+    function startInterval(intervalMs) {
+      interval = setInterval(function() {
+        grid = Life.nextGeneration(grid);
+        updateCanvas();
+      }, intervalMs);
+    }
+
+    function stopInterval(afterMs) {
+      setTimeout(function() {
+        clearInterval(interval);
+        canvas.remove();
+      }, afterMs);
+    }
+
+    updateCanvas();
+    startInterval(150);
+    stopInterval(30000);
   }());
 </script>

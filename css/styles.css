@@ -29,6 +29,21 @@ p {
   font-family: 'Open Sans', sans-serif;
 }
 
+.post-wrapper li {
+  list-style-type: initial;
+  margin: 0;
+}
+
+.post-wrapper ul {
+  margin: 20px 0 20px 20px;
+  list-style: initial;
+}
+
+.post-wrapper ul ul {
+  font-size: 100%;
+  margin: 0 20px;
+}
+
 footer {
   padding: 50px;
   text-align: center;
