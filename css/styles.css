@@ -25,8 +25,12 @@ body {
   color: #fff;
 }
 
-p {
-  font-family: 'Open Sans', sans-serif;
+h1, h2, h3, h4, h5, h6,
+footer,
+p,
+a {
+  /* Override skeleton font settings */
+  font-family: 'PT Sans', sans-serif;
 }
 
 .post-wrapper li {
@@ -53,6 +57,10 @@ footer a {
   color: white;
 }
 
+footer a:hover {
+  color: #eee;
+}
+
 canvas#life {
   position: absolute;
   top: 0;
@@ -73,7 +81,6 @@ ul {
 
 ul.posts h5 {
   margin-bottom: 5px;
-  font-weight: bold;
 }
 
 ul.posts h5 a {
@@ -95,17 +102,16 @@ ul.posts li > em {
 }
 
 .header {
-  min-height: 170px;
-  padding: 20px 0;
+  min-height: 180px;
+  padding-top: 15px;
   text-align: center;
   animation: fadein 2s;
   -webkit-animation: fadein 2s;
 }
 
 .header h3 {
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'PT Sans', sans-serif;
   font-weight: 900;
-  font-style: italic;
   animation: slidein 1s;
   -webkit-animation: slidein 1s;
 }
@@ -114,18 +120,7 @@ ul.posts li > em {
   height: 10px;
 }
 
-.light .button.home-button {
-  margin: 10px;
-  border-color: transparent;
-  transition: border-color 0.2s ease-in-out;
-  -webkit-transition: border-color 0.2s ease-in-out;
-}
-
-.light .button.home-button:hover {
-  border-color: #28353d;
-}
-
-.light {
+.section-light {
   background: #fff;
   color: #28353d;
   z-index: 20;
@@ -145,9 +140,35 @@ ul.posts li > em {
   border-color: #fff;
 }
 
-.light .button {
+.button:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: #fff;
+  color: #fff;
+  transition: background 0.3s ease-in-out;
+}
+
+.section-light .button,
+.section-light .button:visited {
   color: #28353d;
   border-color: #28353d;
+}
+
+.section-light .button:hover {
+  color: #3887be;
+  border-color: #3887be;
+  transition: background 0.4s ease-in-out;
+  transition: color 0.2s ease-in-out;
+}
+
+.section-light .button.home-button {
+  margin: 10px;
+  border-color: transparent;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.section-light .button.home-button:hover {
+  border-color: #28353d;
+  color: inherit;
 }
 
 .title {
@@ -179,8 +200,18 @@ td.sourceCode{
   padding-left:5px
 }
 
-pre, code{
+pre, 
+code {
   background-color:#f8f8f8
+}
+
+pre {
+  border: 1px solid #eee;
+  border-radius: 3px;
+}
+
+code {
+  border: none;
 }
 
 code > span.kw{ color:#204a87; font-weight:bold }

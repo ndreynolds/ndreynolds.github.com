@@ -3,11 +3,11 @@ title: Getting AngularJS and Rails talking
 ---
 
 In this post, I want to explore a few of the ways to exchange data between
-a Rails app and AngularJS module and look at the pros and cons of each
+a Rails app and an AngularJS module---looking at the pros and cons of each
 approach. While Angular sees a lot of usage in single-page applications (SPAs),
 I've found it just as useful for enhancing certain pages of a Rails application
 with more dynamic interfaces, while sticking to plain, scaffoldable CRUD screens for
-the rest.
+the rest of the app.
 
 <!--more-->
 
@@ -16,7 +16,8 @@ Rails app into a JSON API, and render everything on the client side. Rails may
 not be the new kid on the block anymore, but it has a lot of mature
 gems that make putting together a complex site a breeze. 
 
-With that in mind, it's not always clear how best to combine them:
+With that in mind, it's not always clear how best to combine the two
+technologies:
 
 * When do you use Angular templates and when do you stick with HAML/ERB? 
 * How do you pass the data from the Rails side to your Angular controllers?
@@ -72,7 +73,7 @@ angular.module('inventoryManager')
     $scope.items = [];
 
     $http.get('/items.json')
-      .success(function(data) { $scope.items = data.items; }
+      .success(function(data) { $scope.items = data.items; });
   });
 ```
 
@@ -125,11 +126,12 @@ angular.module('inventoryViewer')
 ```
 
 While this a decent strategy for simple use cases like above, it's easy to
-abuse and mixing Ruby and Angular templates can get ugly. A slightly cleaner approach 
-is to use something like the `ngInitial` directive from [this StackOverflow answer][1].
-This directive sets the initial value of the `$scope` variable using the `value` attribute,
-which will be set automatically by the form helper. I've modified the directive below 
-to handle checkbox inputs:
+abuse and mixing Ruby and Angular templates can get ugly. A slightly cleaner
+approach is to use something like the `ngInitial` directive from [this
+StackOverflow answer][1]. This directive sets the initial value of the `$scope`
+variable using the `value` attribute, which will be set automatically by the
+form helper. I've slightly modified the directive below to also handle checkbox
+inputs:
 
 ```javascript
 angular.module('inventoryManager').directive('ngInitial', function() {
@@ -137,11 +139,13 @@ angular.module('inventoryManager').directive('ngInitial', function() {
     restrict: 'A',
     controller: [
       '$scope', '$element', '$attrs', '$parse', function($scope, $element, $attrs, $parse) {
+
         function parseVal() {
-          if ($attrs.type === 'checkbox')
+          if ($attrs.type === 'checkbox') {
             return !!$attrs.checked;
-          else
+          } else {
             return $attrs.value;
+          }
         }
 
         var getter, setter, val;
@@ -163,7 +167,9 @@ It can then be used in the above HAML view like so:
   = simple_form_for @item do |f|
     = f.input :taxable, input_html: { 'ng-model' => 'taxable', 'ng-initial' => '' }
     = f.input :tax_rate, input_html: { 'ng-if' => 'taxable' }
-```
+``` 
+
+(Unfortunately, I don't know of a cleaner way to define valueless attributes.)
 
 ### Using script tags
 
@@ -214,7 +220,7 @@ angular.module('inventoryManager')
 This is my favorite approach in cases where a JSON endpoint doesn't make sense.
 The `$element` dependency can be mocked, so the code is easily-testable. It
 doesn't rely on global variables, so the app is still nicely encapsulated. On top
-of that, this way we avoid making another request.
+of that, we also avoid making another request.
 
 [1]: http://stackoverflow.com/a/17823590
 [2]: http://backbonejs.org/#FAQ-bootstrap

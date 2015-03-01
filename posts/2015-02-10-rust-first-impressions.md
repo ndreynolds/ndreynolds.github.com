@@ -2,16 +2,17 @@
 title: Rust: First Impressions
 ---
 
-I recently decided to give the [Rust programming language][1] a try. Although Rust
-had crossed my radar a few times before, I'd never gotten much further than
-*Hello World!*. The language has undergone a lot of change over the last few
-years, but things appear to finally be slowing down for its upcoming 1.0 release.
+I recently decided to give the [Rust programming language][1] a try. Although
+Rust had crossed my radar a few times before, I'd never gotten much further
+than *Hello World!*. The language has undergone a lot of change over the last
+few years, but things appear to finally be slowing down for its upcoming 1.0
+release.
 
 <!--more-->
 
 ### The Project
 
-My latest encounter with Rust began when I set out to [write a ray tracer][7]
+My latest encounter with Rust began when I set out to write a ray tracer
 to get some experience with graphics programming. I initially considered a few
 different languages. 
 
@@ -27,7 +28,9 @@ accommodates.
 
 It turns out that Rust also nicely meets these requirements. It's fast, more or
 less supports OOP via its trait system, and has at least [one nice graphics
-library][2]. So I gave it a try.
+library][2]. So I gave it a try. What follows are my impressions of the
+language as a Rust novice (so take my praises and criticisms with a grain of
+salt).
 
 ### The Good
 
@@ -40,7 +43,7 @@ I struggled the most with when it came to getting my code to compile.
 
 The idea is that since Rust code isn't garbage collected, and the programmer
 isn't managing memory, the compiler needs some way to keep track of the
-lifespan of your data so that it can allocate and deallocate memory for you. In
+*lifetime* of your data so that it can allocate and deallocate memory for you. In
 theory, this is awesome. You get the performance benefits of managing your
 own memory with all the safety of a garbage collected language.
 
@@ -50,27 +53,31 @@ by their variables. They can be borrowed by another variable, but just like
 a bike you lend out, the owner can't use it while it's being borrowed. 
 
 It does get a bit complicated and I'm not yet experienced enough to describe it
-in more detail, but I'm really liking the ownership system so far. While the
-"borrow checker" has been the biggest hindrance in getting my Rust code to
-compile, it also protects you from a whole class of memory issues (like leaks
-and dangling pointers). Personally, I think fighting the borrow checker is
-vastly preferable to hunting down the cause of a segfault in a large C/C++
-codebase.
+in more detail, but I'm really liking the ownership system so far. I'll qualify
+that by saying, given the choice between manually managing my memory or letting
+Rust do it, I'd choose Rust. Comparing Rust to a GC-ed language isn't quite
+fair, as Rust is presumably being used because GC isn't an option.
+
+While the "borrow checker" has been the biggest hindrance in getting my Rust
+code to compile, it (theoretically) protects you from a whole class of
+memory issues (like leaks and dangling pointers). Based on my experience so
+far, I do think fighting the borrow checker is vastly preferable to hunting
+down the cause of a segfault in a large C/C++ codebase.
 
 #### Cargo
 
 [Cargo][3], Rust's package manager, has been a pleasure to work with. The best
 kind of package managers are the ones that just work, and so far that's been
-the case in my experience with Cargo. The tool is reminiscent in many ways of
-Ruby's [Bundler][6], and it turned out that wasn't a coincidence as [both were created
-by the same people][4].
+for me with Cargo. The tool is reminiscent in many ways of Ruby's [Bundler][6],
+and it turned out that wasn't a coincidence as [both were created by the same
+people][4].
 
 Cargo is similar to Bundler in that it provides a simple way to list out your
 build dependencies---each from either [crates.io][3] (the rubygems.org
 equivalent), a GitHub repo, or from the local filesystem. It then retrieves and
 builds your dependencies, saving the version numbers or git commit SHAs in the
 `Cargo.lock` file. With that file checked in to source control, it's easy to
-get repeatable builds using exactly those same dependencies, so you don't suffer
+get repeatable builds using *exactly* those same dependencies, so you don't suffer
 from issues with others trying to build your project with slightly different
 versions of the dependencies. Pretty neat.
 
@@ -137,7 +144,7 @@ the types you've assigned, you can always cast your way out of it---future
 segmentation faults notwithstanding. Haskell is on the other end of the
 spectrum. Its rigid type system protects you from all sorts of silly mistakes,
 but its functional purity makes normally simple things like printing to stdout
-or getting a random number considerably more difficult.
+or getting a random number considerably more difficult. 
 
 Rust seems to aim for somewhere in the middle of the two extremes. I think one
 of the clear goals of Rust is to provide a safer choice for the sort of systems
@@ -197,6 +204,19 @@ compiler.
 
 The good news is that this is supposed to change soon with the [1.0 release][5].
 
+#### Steep Learning Curve
+
+One of the trade-offs made in exchange for all the nice things about Rust is
+that it takes a while to get off the ground. For me at least, it's not
+a language like Python or Ruby that you can start making useful things with on
+your first day. Using Rust effectively is predicated on having a good
+understanding of the language. As a beginner, I struggled with compiler error
+messages that seemed cryptic taken out of context (mostly due to borrowing or
+ownership problems), but once I'd read more of the official book, they did
+start to make more sense. Moreover, like Haskell, Rust has a powerful type
+system and gives you a lot of rope to hang yourself with. I got stuck a few
+times when trying to define and deserialize a polymorphic "shape" type.
+
 #### Lifetime Syntax
 
 I think Rust generally has pretty nice syntax. I like its Ruby-style closures
@@ -237,3 +257,4 @@ safety, it's a really great tool to have.
 [7]: http://github.com/ndreynolds/rustray
 [8]: https://github.com/search?utf8=%E2%9C%93&q=raytracer
 [9]: http://doc.rust-lang.org/std/option/index.html
+[10]: http://github.com/ndreynolds/rustray 
