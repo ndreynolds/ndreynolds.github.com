@@ -64,7 +64,7 @@ footer a:hover {
 canvas#life {
   position: absolute;
   top: 0;
-  height: 230px;
+  height: 225px;
   width: 100%;
   animation: fadein 4s;
   -webkit-animation: fadein 4s;

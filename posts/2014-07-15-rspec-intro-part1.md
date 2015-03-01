@@ -1,5 +1,5 @@
 ---
-title: Testing Rails 4 apps with RSpec3: Part I
+title: Testing Rails apps with RSpec: Part I
 ---
 
 In this two-part series, I'll cover testing a Rails application---from how to
