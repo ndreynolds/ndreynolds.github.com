@@ -1,122 +1,202 @@
-<!DOCTYPE html>
-<html>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
-    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
-    <title>Nick Reynolds, Software Developer</title>
-    <script type="text/javascript" src="//use.typekit.net/uei3hgb.js"></script>
-    <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
-    <script type="text/javascript" src="life.js"></script>
-    <link rel="stylesheet" href="style.css" type="text/css">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Nick Reynolds</title>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+    <link href="http://fonts.googleapis.com/css?family=PT+Sans:300,600,400" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="./css/normalize.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="./css/skeleton.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="./css/styles.css" type="text/css" media="all" />
+    <script type="text/javascript" src="./js/life.js"></script>
   </head>
   <body>
-    <div class="content">
-      <canvas id="life" width="650" height="150"></canvas> 
-
+    <canvas id="life" height="200"></canvas> 
+    <div class="container">
       <div class="header">
-        <h2>Hi &mdash; I'm Nick Reynolds.</h2>
-        <p>I'm a Software Developer from East Lansing, Michigan.
-        <p>Get in touch with me at 
-        <a href="mailto:ndreynolds@gmail.com" class="email">ndreynolds@gmail.com</a>.
-      </div>
+        <h3 class="title">Hi &mdash; I'm Nick Reynolds</h3>
 
-      <div class="projects-header"> 
-        <h3>A Few Things I've Made...</h3>
+        <p>
+          I'm a full-stack developer based in Berlin.
+          <br />
+          I specialize in building custom applications for web and mobile platforms.
+        </p>
+        <a class="button" href="https://github.com/ndreynolds">
+          <i class="fa fa-lg fa-github"></i>
+          GitHub
+        </a>
+        <a class="button" href="mailto:ndreynolds@gmail.com">
+          <i class="fa fa-lg fa-envelope-o"></i>
+          Email
+        </a>
       </div>
+    </div>
 
-      <ul class="projects">
-        <li>
-          <a class="project" href="http://github.com/ndreynolds/flathead">Flathead</a>
-          is a JavaScript interpreter written in C.
-          <a href="http://github.com/ndreynolds/flathead">
-            <img width="600" src="img/flathead.png" alt="Flathead REPL"/>
+    <div class="section-light">
+      <div class="light">
+  <div class="container">
+    <div class="row section">
+      <hr>
+      <h4 class="section-title">Posts</h4>
+      <hr>
+      <ul class="posts">
+  
+    <li>
+      <h5>
+        <a href="./posts/2015-02-10-rust-first-impressions.html">Rust: First Impressions</a>
+      </h5>
+      <em class="post-date">February 10, 2015</em>
+      
+        <p>I recently decided to give the <a href="http://rust-lang.org">Rust programming language</a> a try. Although Rust had crossed my radar a few times before, I’d never gotten much further than <em>Hello World!</em>. The language has undergone a lot of change over the last few years, but things appear to finally be slowing down for its upcoming 1.0 release.</p>
+
+      
+    </li>
+  
+    <li>
+      <h5>
+        <a href="./posts/2015-01-31-getting-angular-and-rails-talking.html">Getting AngularJS and Rails talking</a>
+      </h5>
+      <em class="post-date">January 31, 2015</em>
+      
+        <p>In this post, I want to explore a few of the ways to exchange data between a Rails app and an AngularJS module—looking at the pros and cons of each approach. While Angular sees a lot of usage in single-page applications (SPAs), I’ve found it just as useful for enhancing certain pages of a Rails application with more dynamic interfaces, while sticking to plain, scaffoldable CRUD screens for the rest of the app.</p>
+
+      
+    </li>
+  
+    <li>
+      <h5>
+        <a href="./posts/2015-01-20-rspec-intro-part2.html">Testing Rails 4 apps with RSpec 3: Part II</a>
+      </h5>
+      <em class="post-date">January 20, 2015</em>
+      
+    </li>
+  
+    <li>
+      <h5>
+        <a href="./posts/2014-07-15-rspec-intro-part1.html">Testing Rails 4 apps with RSpec3: Part I</a>
+      </h5>
+      <em class="post-date">July 15, 2014</em>
+      
+    </li>
+  
+</ul>
+
+      <a href="./archive.html">View All</a>
+    </div>
+
+    <div class="row section">
+      <hr>
+      <h4 class="section-title text-center">Open Source Projects</h4>
+      <hr>
+      <div class="row">
+        <div class="one-half column">
+          <img src="./images/flathead.png" width="100%" alt="Flathead">
+        </div>
+        <div class="one-half column">
+          <h5>Flathead</h5>
+          <p>
+            Flathead is a tiny, portable JavaScript (ECMA-262) interpreter
+            written in C.
+          </p>
+          <a class="button" href="https://github.com/ndreynolds/flathead">
+            <i class="fa fa-lg fa-github"></i>
+            Source Code
           </a>
-        </li>
-
-        <li>
-          <p><img src="img/arcs.ico" alt="ARCS Icon"/>
-          <a class="project" href="http://arcs.cal.msu.edu/about">ARCS</a>
-          is an open-source web platform for humanites-based research. Create,
-          relate, organize and search digitized primary evidence.
-
-          <img width="600" src="img/arcs-viewer.png" alt="ARCS Viewer"/>
-
-          <p>Under the covers, it's a web application built on Backbone.js and
-          a RESTful CakePHP backend that persists to SOLR and MySQL.
-
-          <img width="600" src="img/arcs-search.png" alt="ARCS Search"/>
-
-          <p>Browse the source code on 
-          <a class="project" href="http://github.com/ndreynolds/arcs">Github</a>
-        </li>
-
-        <li>
-          I drew <a class="project" href="/canvas-fractals">Julia Set Fractals</a> 
-          using JavaScript and the HTML5 Canvas API. Fair warning, it's not
-          CPU-friendly.  See the source on 
-          <a class="project" href="http://github.com/ndreynolds/canvas-fractals">Github</a>
-        </li>
-
-        <li>
-          <p><a class="project" href="http://github.com/ndreynolds/hopper">Hopper</a> 
-          is an experimental distributed issue tracker. It's built in Python and uses 
-          Git for versioning.
-        </li>
-
-        <li>
-          <a class="project" href="http://github.com/ndreynolds/vim-cakephp">vim-cakephp</a>
-          is a Vim plugin for CakePHP. I returned from the depths of VimScript
-          with a tool to quickly navigate the MVC structure.
-        </li>
-      </ul>
+        </div>
+      </div>
+      <!-- <div class="row"> -->
+      <!--   <div class="one-half column"> -->
+      <!--   </div> -->
+      <!--   <div class="one-half column"> -->
+      <!--     <h5>Enjoin</h5> -->
+      <!--     <p> -->
+      <!--       Enjoin is a cross-platform database client built on top of -->
+      <!--       atom-shell and React.js. -->
+      <!--     </p> -->
+      <!--     <a class="button" href="https://github.com/ndreynolds/enjoin"> -->
+      <!--       <i class="fa fa-lg fa-github"></i> -->
+      <!--       Source Code -->
+      <!--     </a> -->
+      <!--   </div> -->
+      <!-- </div> -->
+      <div class="row">
+        <div class="one-half column">
+          <img src="./images/arcs-viewer.png" width="100%" alt="Flathead">
+        </div>
+        <div class="one-half column">
+          <h5>ARCS</h5>
+          <p>
+            ARCS is an open-source web platform for humanites-based research.
+            Create, relate, organize and search digitized primary evidence.
+          </p>
+          <a class="button" href="http://arcs.cal.msu.edu/about">
+            <i class="fa fa-lg fa-link"></i>
+            Site
+          </a>
+          <a class="button" href="https://github.com/ndreynolds/arcs">
+            <i class="fa fa-lg fa-github"></i>
+            Source Code
+          </a>
+        </div>
+      </div>
     </div>
-    <div class="footer">
-      <p>
-        &copy; 2013 Nick Reynolds
-      </p>
-      <p>
-        <a href="mailto:ndreynolds@gmail.com">Email</a> /
-        <a href="http://github.com/ndreynolds">Github</a> /
-        <a href="http://ndreynolds.com">ndreynolds.com</a>
-      </p>
-    </div>
-    <script type="text/javascript">
-      (function() {
-        function canvasSupported(){
-          var elem = document.createElement('canvas');
-          return !!(elem.getContext && elem.getContext('2d'));
+  </div>
+</div>
+
+<script>
+  (function() {
+    var canvas = document.getElementById('life')
+    canvas.setAttribute('width', document.body.clientWidth);
+    
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = "#4090c7";
+
+    var width = 200, height = 100;
+    window.grid = Life.initGrid(width, height);
+
+    var interval;
+
+    function updateCanvas() {
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          window.Life.drawCell(ctx, grid, x, y, 8);
         }
-        if (!canvasSupported()) return;
+      }
+    }
 
-        var ctx = document.getElementById('life').getContext('2d');
-        ctx.fillStyle = "#eee";
+    function startInterval(intervalMs) {
+      interval = setInterval(function() {
+        grid = Life.nextGeneration(grid);
+        updateCanvas();
+      }, intervalMs);
+    }
 
-        var grid = new Grid(130, 25);
-        var drawGrid = function(grid) {
-          grid.eachCell(function(cell) {
-            var x = cell.x * 5;
-            var y = cell.y * 5;
-            ctx[cell.alive ? 'fillRect' : 'clearRect'](x, y, 4, 4);
-          });
-        };
+    function stopInterval(afterMs) {
+      setTimeout(function() {
+        clearInterval(interval);
+        canvas.remove();
+      }, afterMs);
+    }
 
-        setInterval(function() {
-          grid.nextGeneration();
-          drawGrid(grid);
-        }, 200);
-      }());
-    </script>
-    <script type="text/javascript">
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-21708094-3']);
-      _gaq.push(['_trackPageview']);
-      (function() {
-        var ga = document.createElement('script'); 
-        ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 
-          'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; 
-        s.parentNode.insertBefore(ga, s);
-      })();
-    </script>
+    updateCanvas();
+    startInterval(150);
+    stopInterval(30000);
+  }());
+</script>
+
+    </div>
+
+    <footer>
+      <div class="container">
+        &copy; 2015 Nick Reynolds
+        <br />
+        <a href="mailto:ndreynolds@gmail.com">Email</a> /
+        <a href="https://github.com/ndreynolds">GitHub</a> /
+        <a href="https://github.com/ndreynolds">ndreynolds.com</a>
+        <br />
+        Generated by <a href="http://jaspervdj.be/hakyll/">hakyll</a>.
+      </div>
+    </footer>
   </body>
 </html>

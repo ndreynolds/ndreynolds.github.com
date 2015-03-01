@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Nick Reynolds</title>
+    <link href="http://fonts.googleapis.com/css?family=PT+Sans:300,600,400" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="../css/normalize.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="../css/skeleton.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="../css/styles.css" type="text/css" media="all" />
+    <script type="text/javascript" src="../js/life.js"></script>
+  </head>
+  <body>
+    <div class="skinny-header"></div>
+    <div class="section-light">
+      <div>
+        <a class="button home-button" href="../">&laquo; Home</a>
+      </div>
+      <div class="container container-narrow">
+  <div class="post-wrapper row section">
+    <h1 class="post-title">Testing Rails 4 apps with RSpec3: Part I</h1>
+    <h5 class="post-date"><em>July 15, 2014</em></h5>
+    <hr>
+    <p>In this two-part series, I’ll cover testing a Rails application—from how to get set up with the latest toolchain, to writing those first tests.</p>
+<p>In Part 1, I’ll look at how to set up and configure <a href="https://github.com/rspec/rspec-rails">RSpec 3</a> (with <a href="https://github.com/thoughtbot/factory_girl_rails">Factory Girl</a> and <a href="https://github.com/jnicklas/capybara">Capybara</a>) for a Rails 4 app, and how to generate and run your first specs. Next time, in Part 2, we’ll look at writing model, controller and feature specs.</p>
+<h2 id="but-first-why-write-tests">But first, why write tests?</h2>
+<p>I was initially very wary of unit-testing. While I knew that I needed to make sure the app worked, I was skeptical of time tradeoff. The first few tests can seem like more trouble than they’re worth, and quite honestly, those first few probably are more trouble than they’re worth. But after a while, writing tests becomes second nature. I think it can easily take less time to write automated tests than to manually test every feature before every release.</p>
+<p>It’s no silver bullet. There will probably still be bugs from scenarios you never thought to test. But even if they can’t catch every bug, tests provide you with confidence that your app works as intended on a basic level. This is all the more important if you didn’t write the app to begin with, or if you’re part of a big team—you won’t always know what effects your changes might have. There might be features you don’t even know about. Ultimately, a solid test suite means less to worry about for you, the developer, and with any luck, a more stable product for the user.</p>
+<h2 id="testing-a-rails-4-app-with-rspec-3">Testing a Rails 4 app with RSpec 3</h2>
+<p>I really like RSpec. If you’re more of a minimalist, you can always skip the extra gems and use the built-in minitest, but I like the additional features and clean DSL that RSpec provides. For example, to test that a variable is nil:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># minitest</span>
+assert_nil obj
+
+<span class="co"># RSpec</span>
+expect(obj).to be_nil</code></pre>
+<p>It’s a matter of taste, but I prefer RSpec’s more human-readable style. Here, we’ll use RSpec 3.0, which landed back in May, and brings a few new changes into the fold (See here for more info: <a href="http://myronmars.to/n/dev-blog/2014/05/notable-changes-in-rspec-3">Notable Changes in RSpec 3</a>).</p>
+<p>In addition to RSpec, we’ll also set up Factory Girl as a fixture replacement, Capybara for browser-level acceptance (a.k.a. integration) tests, and Database Cleaner for cleaning up between test scenarios.</p>
+<p>When you write tests, you’ll need test data. As a fixture replacement, <strong>Factory Girl</strong> helps you build instances of your models for use in test scenarios. This is accomplished through factories in which you define how to build the instances. Although it’s nothing you couldn’t do yourself with plain old ActiveRecord methods and some helper methods, Factory Girl provides a nice system for setting defaults (and then overriding them) that keeps a lot of boilerplate out of your code.</p>
+<p>Acceptance tests look at how the system as a whole functions. For a Rails app, that usually means typing and clicking on things in a web browser and seeing some sort of response. <strong>Capybara</strong> provides one DSL for automating various browsers to simulate user interactions with your app, which you can then make expectations about using RSpec. Because it provides a single interface to various browsers, it gives you the freedom to do things like use Selenium to run certain tests while using headless webkit to run others.</p>
+<p>By default, test scenarios are wrapped in a database transaction so that each scenario’s changes can be rolled back, so as to not cause side effects when running other scenarios later. But when using Capybara’s JavaScript driver, this causes some trouble, as these scenarios are run in another thread which doesn’t share the database connection, leading to unexpected behavior. To avoid headaches down the road, we’ll also use the <strong><code>database_cleaner</code></strong> gem to adjust the way the database cleanup is done. (See <a href="http://devblog.avdi.org/2012/08/31/configuring-database_cleaner-with-rails-rspec-capybara-and-selenium/">this post</a> for more details.)</p>
+<h2 id="configure-your-gemfile">Configure your Gemfile</h2>
+<p>Let’s get started. Assuming you’re working inside a new Rails 4 app, add the following to your <code>Gemfile</code> and then <code>bundle install</code>.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">group <span class="st">:development</span>, <span class="st">:test</span> <span class="kw">do</span>
+  gem <span class="st">'rspec-rails'</span>, <span class="st">'~&gt; 3.0.0'</span>
+  gem <span class="st">'factory_girl_rails'</span>
+  gem <span class="st">'capybara'</span>
+  gem <span class="st">'database_cleaner'</span>
+<span class="kw">end</span></code></pre>
+<h2 id="run-generators">Run generators</h2>
+<p>Next, run the RSpec generator to create the initial skeleton:</p>
+<pre><code>rails generate rspec:install</code></pre>
+<h2 id="configure-capybara">Configure Capybara</h2>
+<p>To make Capybara available from within RSpec specs, add the following line to <code>spec/rails_helper.rb</code>:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/rails_helper.rb</span>
+require <span class="st">'capybara/rails'</span></code></pre>
+<p>Your Capybara feature specs will also need a home, add the <code>spec/features/</code> directory:</p>
+<pre><code>mkdir spec/features</code></pre>
+<h2 id="configure-database_cleaner">Configure <code>database_cleaner</code></h2>
+<p>Next, make the following adjustments to <code>spec/rails_helper.rb</code> to integrate the <code>database_cleaner</code> gem:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">config.use_transactional_fixtures = <span class="dv">false</span></code></pre>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="dt">RSpec</span>.configure <span class="kw">do</span> |config|
+
+  config.before(<span class="st">:suite</span>) <span class="kw">do</span>
+    <span class="dt">DatabaseCleaner</span>.clean_with(<span class="st">:truncation</span>)
+  <span class="kw">end</span>
+
+  config.before(<span class="st">:each</span>) <span class="kw">do</span>
+    <span class="dt">DatabaseCleaner</span>.strategy = <span class="st">:transaction</span>
+  <span class="kw">end</span>
+
+  config.before(<span class="st">:each</span>, <span class="st">:js</span> =&gt; <span class="dv">true</span>) <span class="kw">do</span>
+    <span class="dt">DatabaseCleaner</span>.strategy = <span class="st">:truncation</span>
+  <span class="kw">end</span>
+
+  config.before(<span class="st">:each</span>) <span class="kw">do</span>
+    <span class="dt">DatabaseCleaner</span>.start
+  <span class="kw">end</span>
+
+  config.after(<span class="st">:each</span>) <span class="kw">do</span>
+    <span class="dt">DatabaseCleaner</span>.clean
+  <span class="kw">end</span>
+
+<span class="kw">end</span></code></pre>
+<h2 id="the-.rspec-file">The <code>.rspec</code> file</h2>
+<p>By default, RSpec generates a <code>.rspec</code> file in your app’s root. This allows you to set different command line options (see <code>rspec -h</code>) that will be automatically picked up. The default <code>.rspec</code> includes the <code>--warnings</code> option, which can be really noisy even in a brand new Rails app. If you see a lot of warnings later on, you can hide them by removing this line.</p>
+<h2 id="generating-specs">Generating specs</h2>
+<p>The next time you run <code>rails generate resource</code>, Rails should already be configured to generate specs under <code>spec/</code> and factories under <code>spec/factories</code>.</p>
+<p>Let’s try that out with the proverbial Rails blog example:</p>
+<pre><code>rails generate resource post title:string content:text published:boolean</code></pre>
+<p>If everything’s correctly configured, you should see something close to this:</p>
+<pre><code>invoke  active_record
+create    db/migrate/20140630160246_create_posts.rb
+create    app/models/post.rb
+invoke    rspec
+create      spec/models/post_spec.rb
+invoke      factory_girl
+create        spec/factories/posts.rb
+invoke  controller
+create    app/controllers/posts_controller.rb
+invoke    erb
+create      app/views/posts
+invoke    rspec
+create      spec/controllers/posts_controller_spec.rb
+invoke    helper
+create      app/helpers/posts_helper.rb
+invoke      rspec
+create        spec/helpers/posts_helper_spec.rb
+invoke    assets
+invoke      coffee
+create        app/assets/javascripts/posts.js.coffee
+invoke      scss
+create        app/assets/stylesheets/posts.css.scss
+invoke  resource_route
+ route    resources :posts</code></pre>
+<p>Note the factory at <code>spec/factories/posts.rb</code>, the model spec at <code>specs/models/post_spec.rb</code>, and the controller spec at <code>specs/controllers/post_controller_spec.rb</code>.</p>
+<p>With the new specs in place, try running <code>rspec</code> (you can also run <code>rake</code>), to see the results. So far, you should only see a few pending specs:</p>
+<pre><code>**
+
+Pending:
+  PostsHelper add some examples to (or delete) ./spec/helpers/posts_helper_spec.rb
+    # Not yet implemented
+    # ./spec/helpers/posts_helper_spec.rb:14
+  Post add some examples to (or delete) ./spec/models/post_spec.rb
+    # Not yet implemented
+    # ./spec/models/post_spec.rb:4</code></pre>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>Now that everything is set up, we’re ready to write some tests. Stay tuned for Part 2. In the meantime, here are a few more resources worth a read:</p>
+<ul>
+<li><a href="http://guides.rubyonrails.org/testing.html">A Guide to Testing Rails Application</a> — the Rails Guide to testing</li>
+<li>Thoughbot’s <em><a href="http://robots.thoughtbot.com/how-we-test-rails-applications">How We Test Rails Applications</a></em></li>
+<li>DHH’s <em><a href="http://david.heinemeierhansson.com/2014/tdd-is-dead-long-live-testing.html">TDD is dead. Long live testing.</a></em></li>
+</ul>
+  </div>
+</div>
+
+    </div>
+
+    <footer>
+      <div class="container">
+        &copy; 2015 Nick Reynolds
+        <br />
+        <a href="mailto:ndreynolds@gmail.com">Email</a> /
+        <a href="https://github.com/ndreynolds">GitHub</a> /
+        <a href="https://github.com/ndreynolds">ndreynolds.com</a>
+      </div>
+    </footer>
+  </body>
+</html>
