@@ -1,3 +1,5 @@
+TMP_DIR = /tmp/blog_build
+
 site:
 	.cabal-sandbox/bin/cabal exec ghc -- --make site.hs
 
@@ -5,8 +7,9 @@ build: site
 	site build
 
 release: build
-	cp -r _site /tmp/blog_build
+	mkdir -p $(TMP_DIR)
+	cp -r _site/* $(TMP_DIR)
 	git checkout master
-	cp -r /tmp/blog_build/* .
+	cp -r $(TMP_DIR)/* .
 	git commit -am "Build from source branch commit $(shell git rev-parse source | cut -c 1-6)"
 	git checkout source
