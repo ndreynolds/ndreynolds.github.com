@@ -135,12 +135,12 @@ ul.posts li > em {
   text-align: center;
 }
 
-.button {
+.button, .button:visited {
   color: #fff;
   border-color: #fff;
 }
 
-.button:hover {
+.button:hover, .button:active {
   background: rgba(255,255,255,0.2);
   border-color: #fff;
   color: #fff;
@@ -148,7 +148,8 @@ ul.posts li > em {
 }
 
 .section-light .button,
-.section-light .button:visited {
+.section-light .button:visited,
+.section-light .button:active {
   color: #28353d;
   border-color: #28353d;
 }
