@@ -5,6 +5,8 @@ title: Testing Rails apps with RSpec: Part I
 In this two-part series, I'll cover testing a Rails application---from how to
 get set up with the latest toolchain, to writing those first tests.
 
+<!--more-->
+
 In Part 1, I'll look at how to set up and configure [RSpec 3][6] (with [Factory
 Girl][7] and [Capybara][8]) for a Rails 4 app, and how to generate and run your
 first specs. Next time, in Part 2, we'll look at writing model, controller and

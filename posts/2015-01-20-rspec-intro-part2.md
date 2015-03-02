@@ -5,6 +5,8 @@ title: Testing Rails apps with RSpec: Part II
 In this two-part series, I cover testing a Rails application using RSpec and
 some other popular gems. If you missed Part 1, you can catch up here.
 
+<!--more-->
+
 In Part 2, with the setup out of the way, we'll dive into writing tests for the
 various components of a Rails app. 
 
