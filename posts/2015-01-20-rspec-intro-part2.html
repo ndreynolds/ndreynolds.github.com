@@ -22,6 +22,7 @@
     <h5 class="post-date"><em>January 20, 2015</em></h5>
     <hr>
     <p>In this two-part series, I cover testing a Rails application using RSpec and some other popular gems. If you missed Part 1, you can catch up here.</p>
+<!--more-->
 <p>In Part 2, with the setup out of the way, we’ll dive into writing tests for the various components of a Rails app.</p>
 <p>Before diving in, I will say that some of this may be a bit opinionated. When I’m testing a Rails app, my goal is to get the most bang for my buck—that is, the most test coverage for the fewest lines of test code. If you find that a test requiring extensive mocking or brittle networking logic begins taking up more than its share of your development time, in my book it’s fine to just <code>git rm</code> it and move on. Likewise, while getting to 100% coverage is a noble goal, it isn’t always as realistic (in the face of schedule and budget constraints) or as helpful (think: future refactoring) as it might seem. The real objective isn’t to hit some arbitrary percentage—it’s to make your app more reliable for your users and prevent regressions as you develop it.</p>
 <h2 id="overview">Overview</h2>
