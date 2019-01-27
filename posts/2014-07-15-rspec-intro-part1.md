@@ -1,5 +1,5 @@
 ---
-title: Testing Rails apps with RSpec: Part I
+title: "Testing Rails apps with RSpec: Part I"
 ---
 
 In this two-part series, I'll cover testing a Rails application---from how to
@@ -19,7 +19,7 @@ sure the app worked, I was skeptical of time tradeoff. The first few tests can
 seem like more trouble than they're worth, and quite honestly, those first few
 probably are more trouble than they're worth. But after a while, writing tests
 becomes second nature. I think it can easily take less time to write automated
-tests than to manually test every feature before every release. 
+tests than to manually test every feature before every release.
 
 It's no silver bullet. There will probably still be bugs from scenarios you
 never thought to test. But even if they can't catch every bug, tests provide
@@ -33,7 +33,7 @@ a more stable product for the user.
 ## Testing a Rails 4 app with RSpec 3
 
 I really like RSpec. If you're more of a minimalist, you can always skip the
-extra gems and use the built-in minitest, but I like the additional features and 
+extra gems and use the built-in minitest, but I like the additional features and
 clean DSL that RSpec provides. For example, to test that a variable is nil:
 
 ```ruby

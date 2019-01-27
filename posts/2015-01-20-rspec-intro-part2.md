@@ -1,5 +1,5 @@
 ---
-title: Testing Rails apps with RSpec: Part II
+title: "Testing Rails apps with RSpec: Part II"
 ---
 
 In this two-part series, I cover testing a Rails application using RSpec and
@@ -8,13 +8,13 @@ some other popular gems. If you missed Part 1, you can catch up here.
 <!--more-->
 
 In Part 2, with the setup out of the way, we'll dive into writing tests for the
-various components of a Rails app. 
+various components of a Rails app.
 
 Before diving in, I will say that some of this may be a bit opinionated. When
 I'm testing a Rails app, my goal is to get the most bang for my buck---that is,
 the most test coverage for the fewest lines of test code. If you find that
 a test requiring extensive mocking or brittle networking logic begins taking up
-more than its share of your development time, in my book it's fine to just 
+more than its share of your development time, in my book it's fine to just
 `git rm` it and move on. Likewise, while getting to 100% coverage is a noble goal,
 it isn't always as realistic (in the face of schedule and budget constraints)
 or as helpful (think: future refactoring) as it might seem. The real objective
@@ -61,10 +61,10 @@ to test, we want to both make sure that it works in the normal case, as well as
 in certain exceptional cases. Consider some example "what-ifs" when a plain old
 Ruby method is called:
 
-* If the method takes an argument, what happens if it's nil? 
+* If the method takes an argument, what happens if it's nil?
 * If the method takes an argument, what happens if the wrong type is passed or
   the argument is invalid in some other way (e.g., empty, wrong encoding)?
-* If the method has any special behavior based on the arguments or instance state, 
+* If the method has any special behavior based on the arguments or instance state,
   what happens when that special behavior runs? Does it work correctly?
 * If a number is to be divided by another number, what if the divisor is 0?
 
@@ -79,7 +79,7 @@ vehicle's make, model, year and style.
 
 To make it easier to generate instances of our model in specs, we'll create
 factories using the `factory_girl` gem. Here's an example factory definition
-for our `Vehicle` model that we'll use in future examples: 
+for our `Vehicle` model that we'll use in future examples:
 
 ```ruby
 # spec/factories/vehicles.rb
@@ -158,7 +158,7 @@ end
 
 ### Testing Validations
 
-Imagine we'd like to require that all vehicles have a year. When users enter new 
+Imagine we'd like to require that all vehicles have a year. When users enter new
 vehicles without a year, validation should fail and they should be required to
 enter it in order to continue. To make sure that happens, we'll need to ensure that
 our validation in the `Vehicle` model is working correctly.
@@ -192,7 +192,7 @@ end
 In case you're not familiar with RSpec's DSL, we'll take a quick detour and
 cover the three important pieces here:
 
-* `describe` defines a group of examples and takes the entity (e.g., model, method, etc.) 
+* `describe` defines a group of examples and takes the entity (e.g., model, method, etc.)
   being specified.
 * `it` defines an example and takes a description of the example. You'll want to phrase the
   description in a way that it reads like English (e.g., `it 'raises an exception when...'`).
@@ -215,7 +215,7 @@ Imagine our app will display the average fuel-efficiency (MPG) for each vehicle
 based on user-submitted values. There's now an `MpgSubmission` model and a
 `has_many` relationship defined in the `Vehicle` model. To quickly get the
 average MPG for a vehicle, we'll add an `average_mpg` method to the `Vehicle`
-model that will average the MPG submissions. 
+model that will average the MPG submissions.
 
 To make it interesting, we'll add an additional constraint: if there are fewer
 than 10 submissions, the method should return nil to indicate insufficient data.
@@ -267,7 +267,7 @@ code being tested.
 In the above spec, we test both sides of the if-expression---an example for
 the case that there are fewer MPG submissions than required and an example
 for the case that the requirement is met. In the latter case, we also verify
-that the average agrees with our test data. 
+that the average agrees with our test data.
 
 While there may be other scenarios we could test here, these examples cover
 this method fairly well---all branches are tested and there are no obvious nil
@@ -289,7 +289,7 @@ are some of the questions you should ask when testing controller actions:
 * If the request takes or requires certain parameters, what happens if these are
   missing or invalid?
 * If access to the action is restricted, does the authentication and
-  authorization logic work as expected? 
+  authorization logic work as expected?
 * Does the action return the correct status code? (important for json format)
 
 
@@ -298,7 +298,7 @@ are some of the questions you should ask when testing controller actions:
 class VehiclesController < ApplicationController
   def create
     @vehicle = Vehicle.new(vehicle_params)
-    
+
     respond_to do |format|
       if @vehicle.save
         format.html { redirect_to vehicle_path(@vehicle), notice: 'Vehicle was successfully created.' }
@@ -326,19 +326,19 @@ describe VehiclesController do
           post :create, vehicle: attributes_for(:vehicle)
           expect(Vehicle.count).to eq(1)
         end
-  
+
         it 'redirects to the "show" action for the new vehicle' do
           post :create, vehicle: attributes_for(:vehicle)
           expect(response).to redirect_to Vehicle.first
         end
       end
-  
+
       context 'with invalid attributes' do
         it 'does not create the vehicle' do
           post :create, vehicle: attributes_for(:vehicle, year: nil)
           expect(Vehicle.count).to eq(0)
         end
-  
+
         it 're-renders the "new" view' do
           post :create, vehicle: attributes_for(:vehicle, year: nil)
           expect(response).to render_template :new
@@ -358,7 +358,7 @@ describe VehiclesController do
           expect(response.status).to eq(201)
         end
       end
-  
+
       context 'with invalid attributes' do
         it 'does not create the vehicle' do
           post :create, vehicle: attributes_for(:vehicle, year: nil), format: :json
@@ -375,7 +375,7 @@ describe VehiclesController do
 end
 ```
 
-There's a lot going on in the above specs. We use the `context` 
+There's a lot going on in the above specs. We use the `context`
 
 
 ## Feature (a.k.a, Acceptance) specs
@@ -412,7 +412,7 @@ feature 'User signs in' do
   scenario 'with valid credentials' do
     visit sign_in_path
     fill_in 'Username', with: 'joe.example'
-    fill_in 'Password', with: 'passw0rd' 
+    fill_in 'Password', with: 'passw0rd'
     click_on 'Sign In'
 
     expect(page).to have_content('You have successfully signed in!')
@@ -447,7 +447,7 @@ feature spec.
 feature 'User views dynamic Hello World message' do
   it 'displays Hello World', js: true do
     visit root_path
-    page.execute_script "document.write('Hello World!')" 
+    page.execute_script "document.write('Hello World!')"
     expect(page).to have_content('Hello World!')
   end
 end

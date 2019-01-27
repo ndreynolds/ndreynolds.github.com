@@ -14,12 +14,12 @@ the rest of the app.
 With this approach, it doesn't make sense to kick HAML to the curb, turn your
 Rails app into a JSON API, and render everything on the client side. Rails may
 not be the new kid on the block anymore, but it has a lot of mature
-gems that make putting together a complex site a breeze. 
+gems that make putting together a complex site a breeze.
 
 With that in mind, it's not always clear how best to combine the two
 technologies:
 
-* When do you use Angular templates and when do you stick with HAML/ERB? 
+* When do you use Angular templates and when do you stick with HAML/ERB?
 * How do you pass the data from the Rails side to your Angular controllers?
 
 
@@ -99,8 +99,8 @@ the field should be hidden.
 The is definitely a job for Angular, but I'm not willing to give up
 `simple_form` in the process. Let's see if we can make them play together.
 
-The item form partial will be used for both the `new` and `edit` actions. The 
-show/hide behavior must work for both a new item as well as for an existing item 
+The item form partial will be used for both the `new` and `edit` actions. The
+show/hide behavior must work for both a new item as well as for an existing item
 that has already been marked as taxable.
 
 The `ngInit` directive evaluates an expression in the current scope. After
@@ -167,7 +167,7 @@ It can then be used in the above HAML view like so:
   = simple_form_for @item do |f|
     = f.input :taxable, input_html: { 'ng-model' => 'taxable', 'ng-initial' => '' }
     = f.input :tax_rate, input_html: { 'ng-if' => 'taxable' }
-``` 
+```
 
 (Unfortunately, I don't know of a cleaner way to define valueless attributes.)
 

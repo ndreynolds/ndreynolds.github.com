@@ -4,6 +4,7 @@
 # Cabal sandbox
 cabal.sandbox.config
 .cabal-sandbox
+.stack-work/
 
 # Compiled and cached Hakyll files
 site

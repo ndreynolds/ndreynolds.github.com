@@ -28,21 +28,6 @@
           </a>
         </div>
       </div>
-      <!-- <div class="row"> -->
-      <!--   <div class="one-half column"> -->
-      <!--   </div> -->
-      <!--   <div class="one-half column"> -->
-      <!--     <h5>Enjoin</h5> -->
-      <!--     <p> -->
-      <!--       Enjoin is a cross-platform database client built on top of -->
-      <!--       atom-shell and React.js. -->
-      <!--     </p> -->
-      <!--     <a class="button" href="https://github.com/ndreynolds/enjoin"> -->
-      <!--       <i class="fa fa-lg fa-github"></i> -->
-      <!--       Source Code -->
-      <!--     </a> -->
-      <!--   </div> -->
-      <!-- </div> -->
       <div class="row">
         <div class="one-half column">
           <img src="/images/arcs-viewer.png" width="100%" alt="Flathead">
@@ -71,12 +56,13 @@
   (function() {
     var canvas = document.getElementById('life')
     canvas.setAttribute('width', document.body.clientWidth);
-    
+
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = "#4090c7";
 
-    var width = 200, height = 100;
-    window.grid = Life.initGrid(width, height);
+    var width = 250,
+        height = 100;
+    var grid = Life.initGrid(width, height);
 
     var interval;
 

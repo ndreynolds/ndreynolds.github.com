@@ -1,5 +1,5 @@
 ---
-title: Rust: First Impressions
+title: "Rust: First Impressions"
 ---
 
 I recently decided to give the [Rust programming language][1] a try. Although
@@ -14,7 +14,7 @@ release.
 
 My latest encounter with Rust began when I set out to write a ray tracer
 to get some experience with graphics programming. I initially considered a few
-different languages. 
+different languages.
 
 As a [GitHub search for "raytracer"][8] shows, the typical language for the job
 is C++. And I think it makes sense. You have to recursively trace about
@@ -39,7 +39,7 @@ I had a pretty great experience with Rust, so there was a lot to like.
 #### Ownership
 
 Ownership is probably the most unique of Rust's features. It's also what
-I struggled the most with when it came to getting my code to compile. 
+I struggled the most with when it came to getting my code to compile.
 
 The idea is that since Rust code isn't garbage collected, and the programmer
 isn't managing memory, the compiler needs some way to keep track of the
@@ -50,7 +50,7 @@ own memory with all the safety of a garbage collected language.
 In order for that to work, the compiler enforces a set of rules for ownership
 and borrowing of pointers and other resources. Resources are said to be *owned*
 by their variables. They can be borrowed by another variable, but just like
-a bike you lend out, the owner can't use it while it's being borrowed. 
+a bike you lend out, the owner can't use it while it's being borrowed.
 
 It does get a bit complicated and I'm not yet experienced enough to describe it
 in more detail, but I'm really liking the ownership system so far. I'll qualify
@@ -137,25 +137,25 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured
 Every language seems to make its own trade-offs between safety (protecting the
 programmer from him or herself) and flexibility (which allows you to do useful
 things). The protections that prevent you from unsafe memory access or type
-errors always come at the cost of some flexibility. 
+errors always come at the cost of some flexibility.
 
 With C, you're free to do whatever you want to your bits. If GCC doesn't like
 the types you've assigned, you can always cast your way out of it---future
 segmentation faults notwithstanding. Haskell is on the other end of the
 spectrum. Its rigid type system protects you from all sorts of silly mistakes,
 but its functional purity makes normally simple things like printing to stdout
-or getting a random number considerably more difficult. 
+or getting a random number considerably more difficult.
 
 Rust seems to aim for somewhere in the middle of the two extremes. I think one
 of the clear goals of Rust is to provide a safer choice for the sort of systems
 programming that C or C++ is typically used for. One way to achieve safety is
 to prevent the programmer from doing anything useful, but I don't think that's
-the case here. 
+the case here.
 
 Rust encourages safety by providing reasonable defaults, but there's usually
 an escape hatch if you need to do something not-so-safe (which can happen every
 now and then in the real world). By default, variable bindings are immutable,
-which means any mutation must be made explicit. 
+which means any mutation must be made explicit.
 
 ```rust
 // Variable bindings are immutable by default:
@@ -164,7 +164,7 @@ let x = 42;
 
 // But if you later decide you need a mutable binding, you have that option:
 let mut y = 42;
-y += 1;        
+y += 1;
 ```
 
 Rust also forgoes null pointers and encourages an [Option][9] type (similar to
@@ -238,7 +238,7 @@ Java-style verbosity here.
 
 I was going to add a "The Ugly" section to complete the trifecta, but my
 experience with Rust has actually been a really pleasant one. I'm sure the API
-stability and documentation will only improve with time. 
+stability and documentation will only improve with time.
 
 With that said, I don't think Rust is a good general purpose programming
 language. I don't plan to use Rust for web programming any time soon. When it
@@ -257,4 +257,4 @@ safety, it's a really great tool to have.
 [7]: http://github.com/ndreynolds/rustray
 [8]: https://github.com/search?utf8=%E2%9C%93&q=raytracer
 [9]: http://doc.rust-lang.org/std/option/index.html
-[10]: http://github.com/ndreynolds/rustray 
+[10]: http://github.com/ndreynolds/rustray
