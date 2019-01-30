@@ -1,38 +1,39 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Nick Reynolds</title>
-    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
-    <link href="http://fonts.googleapis.com/css?family=PT+Sans:300,600,400" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="./css/normalize.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="./css/skeleton.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="./css/styles.css" type="text/css" media="all" />
-    <script type="text/javascript" src="./js/life.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="./css/vendor.css" type="text/css" media="all" />
+<link rel="stylesheet" href="./css/site.css" type="text/css" media="all" />
+<script type="text/javascript" src="./js/life.js"></script>
+
   </head>
   <body>
-    <canvas id="life" height="200"></canvas> 
-    <div class="container">
-      <div class="header">
-        <h3 class="title">Hi &mdash; I'm Nick Reynolds</h3>
+    <canvas id="life" height="250"></canvas>
 
-        <p>
-          I'm a full-stack developer based in Berlin.
-          <br />
-          I specialize in crafting custom web and mobile applications.
-          I love Ruby, the good parts of JavaScript, and recently, Haskell.
-        </p>
-        <a class="button" href="https://github.com/ndreynolds">
-          <i class="fa fa-lg fa-github"></i>
-          GitHub
-        </a>
-        <a class="button" href="mailto:ndreynolds@gmail.com">
-          <i class="fa fa-lg fa-envelope-o"></i>
-          Email
-        </a>
-      </div>
-    </div>
+<div class="container">
+  <div class="header">
+    <h3 class="title">Hi &mdash; I’m Nick Reynolds</h3>
+
+    <p>
+      I’m a full-stack developer based in Berlin.
+      <br />
+      I specialize in crafting custom web and mobile applications.
+      I love Ruby, the good parts of JavaScript, and recently, Haskell.
+    </p>
+    <a class="button" href="https://github.com/ndreynolds">
+      <i class="fa fa-lg fa-github"></i>
+      GitHub
+    </a>
+    </a>
+    <a class="button" href="mailto:ndreynolds@posteo.de">
+      <i class="fa fa-lg fa-envelope-o"></i>
+      Email
+    </a>
+  </div>
+</div>
+
 
     <div class="section-light">
       <div class="light">
@@ -44,45 +45,105 @@
       <ul class="posts">
   
     <li>
-      <h5>
+      <h4>
+        <a href="./posts/2019-01-27-terminal-apps-with-elixir.html">Building Terminal Apps with Elixir</a>
+      </h4>
+      <em class="post-date">January 27, 2019</em>
+      
+        <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#connecting-to-remote-observer-nodes">Connecting to remote Observer nodes</a></li>
+<li><a href="#an-erlang-observer-for-the-terminal">An Erlang observer for the terminal</a></li>
+<li><a href="#termbox-and-c-and-nifs-oh-my">Termbox and C and NIFs, Oh My!</a></li>
+<li><a href="#the-imperative-mood">The Imperative Mood</a></li>
+<li><a href="#a-terminal-ui-kit-for-elixir">A Terminal UI Kit for Elixir</a></li>
+<li><a href="#actually-writing-terminal-apps">(Actually) Writing Terminal Apps</a></li>
+<li><a href="#fetching-data">Fetching Data</a></li>
+<li><a href="#scaling-application-state">Scaling Application State</a></li>
+</ul></div>
+<p><img src="./images/ratatouille.png" /></p>
+<p>Elixir may seem like an odd choice for building terminal applications. In fact, when I started this project, that’s exactly what I thought.</p>
+<p>Before I get into that, I’ll first give you some background as to why I even would try something like that, then I promise to get back to building terminal apps.</p>
+
+      
+    </li>
+  
+    <li>
+      <h4>
         <a href="./posts/2015-02-10-rust-first-impressions.html">Rust: First Impressions</a>
-      </h5>
+      </h4>
       <em class="post-date">February 10, 2015</em>
       
-        <p>I recently decided to give the <a href="http://rust-lang.org">Rust programming language</a> a try. Although Rust had crossed my radar a few times before, I’d never gotten much further than <em>Hello World!</em>. The language has undergone a lot of change over the last few years, but things appear to finally be slowing down for its upcoming 1.0 release.</p>
+        <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#the-project">The Project</a></li>
+<li><a href="#the-good">The Good</a></li>
+<li><a href="#the-bad">The Bad</a></li>
+<li><a href="#wrapping-up">Wrapping Up</a></li>
+</ul></div>
+<p>I recently decided to give the <a href="http://rust-lang.org">Rust programming language</a> a try. Although Rust had crossed my radar a few times before, I’d never gotten much further than <em>Hello World!</em>. The language has undergone a lot of change over the last few years, but things appear to finally be slowing down for its upcoming 1.0 release.</p>
 
       
     </li>
   
     <li>
-      <h5>
+      <h4>
         <a href="./posts/2015-01-31-getting-angular-and-rails-talking.html">Getting AngularJS and Rails talking</a>
-      </h5>
+      </h4>
       <em class="post-date">January 31, 2015</em>
       
-        <p>In this post, I want to explore a few of the ways to exchange data between a Rails app and an AngularJS module—looking at the pros and cons of each approach. While Angular sees a lot of usage in single-page applications (SPAs), I’ve found it just as useful for enhancing certain pages of a Rails application with more dynamic interfaces, while sticking to plain, scaffoldable CRUD screens for the rest of the app.</p>
+        <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#json-endpoints-in-the-rails-controller">JSON endpoints in the Rails controller</a></li>
+<li><a href="#nginit-and-nginitial">ngInit (and ngInitial)</a></li>
+<li><a href="#using-script-tags">Using script tags</a></li>
+<li><a href="#json-data-attributes">JSON data attributes</a></li>
+</ul></div>
+<p>In this post, I want to explore a few of the ways to exchange data between a Rails app and an AngularJS module—looking at the pros and cons of each approach. While Angular sees a lot of usage in single-page applications (SPAs), I’ve found it just as useful for enhancing certain pages of a Rails application with more dynamic interfaces, while sticking to plain, scaffoldable CRUD screens for the rest of the app.</p>
 
       
     </li>
   
     <li>
-      <h5>
+      <h4>
         <a href="./posts/2015-01-20-rspec-intro-part2.html">Testing Rails apps with RSpec: Part II</a>
-      </h5>
+      </h4>
       <em class="post-date">January 20, 2015</em>
       
-        <p>In this two-part series, I cover testing a Rails application using RSpec and some other popular gems. If you missed Part 1, you can catch up here.</p>
+        <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#model-specs">Model specs</a><ul>
+<li><a href="#defining-factories">Defining Factories</a></li>
+<li><a href="#testing-validations">Testing Validations</a></li>
+<li><a href="#testing-methods">Testing Methods</a></li>
+</ul></li>
+<li><a href="#controller-specs">Controller specs</a></li>
+<li><a href="#feature-a.k.a-acceptance-specs">Feature (a.k.a, Acceptance) specs</a><ul>
+<li><a href="#interacting-with-javascript">Interacting with JavaScript</a></li>
+</ul></li>
+<li><a href="#wrapping-up">Wrapping Up</a></li>
+<li><a href="#more-resources">More Resources</a></li>
+</ul></div>
+<p>In this two-part series, I cover testing a Rails application using RSpec and some other popular gems. If you missed Part 1, you can catch up here.</p>
 
       
     </li>
   
     <li>
-      <h5>
+      <h4>
         <a href="./posts/2014-07-15-rspec-intro-part1.html">Testing Rails apps with RSpec: Part I</a>
-      </h5>
+      </h4>
       <em class="post-date">July 15, 2014</em>
       
-        <p>In this two-part series, I’ll cover testing a Rails application—from how to get set up with the latest toolchain, to writing those first tests.</p>
+        <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#but-first-why-write-tests">But first, why write tests?</a></li>
+<li><a href="#testing-a-rails-4-app-with-rspec-3">Testing a Rails 4 app with RSpec 3</a></li>
+<li><a href="#configure-your-gemfile">Configure your Gemfile</a></li>
+<li><a href="#run-generators">Run generators</a></li>
+<li><a href="#configure-capybara">Configure Capybara</a></li>
+<li><a href="#configure-database_cleaner">Configure <code>database_cleaner</code></a></li>
+<li><a href="#the-.rspec-file">The <code>.rspec</code> file</a></li>
+<li><a href="#generating-specs">Generating specs</a></li>
+<li><a href="#wrapping-up">Wrapping Up</a></li>
+</ul></div>
+<p>In this two-part series, I’ll cover testing a Rails application—from how to get set up with the latest toolchain, to writing those first tests.</p>
 
       
     </li>
@@ -96,6 +157,36 @@
       <hr>
       <h4 class="section-title text-center">Open Source Projects</h4>
       <hr>
+      <div class="row">
+        <div class="one-half column">
+          <img src="./images/ratatouille.png" width="100%" alt="ratatouille">
+        </div>
+        <div class="one-half column">
+          <h5>Ratatouille</h5>
+          <p>
+            A TUI (terminal UI) kit for Elixir
+          </p>
+          <a class="button" href="https://github.com/ndreynolds/ratatouille">
+            <i class="fa fa-lg fa-github"></i>
+            Source Code
+          </a>
+        </div>
+      </div>
+      <div class="row">
+        <div class="one-half column">
+          <img src="./images/toby.png" width="100%" alt="toby">
+        </div>
+        <div class="one-half column">
+          <h5>toby</h5>
+          <p>
+            A text-based Erlang observer
+          </p>
+          <a class="button" href="https://github.com/ndreynolds/toby">
+            <i class="fa fa-lg fa-github"></i>
+            Source Code
+          </a>
+        </div>
+      </div>
       <div class="row">
         <div class="one-half column">
           <img src="./images/flathead.png" width="100%" alt="Flathead">
@@ -112,21 +203,6 @@
           </a>
         </div>
       </div>
-      <!-- <div class="row"> -->
-      <!--   <div class="one-half column"> -->
-      <!--   </div> -->
-      <!--   <div class="one-half column"> -->
-      <!--     <h5>Enjoin</h5> -->
-      <!--     <p> -->
-      <!--       Enjoin is a cross-platform database client built on top of -->
-      <!--       atom-shell and React.js. -->
-      <!--     </p> -->
-      <!--     <a class="button" href="https://github.com/ndreynolds/enjoin"> -->
-      <!--       <i class="fa fa-lg fa-github"></i> -->
-      <!--       Source Code -->
-      <!--     </a> -->
-      <!--   </div> -->
-      <!-- </div> -->
       <div class="row">
         <div class="one-half column">
           <img src="./images/arcs-viewer.png" width="100%" alt="Flathead">
@@ -155,12 +231,13 @@
   (function() {
     var canvas = document.getElementById('life')
     canvas.setAttribute('width', document.body.clientWidth);
-    
+
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = "#4090c7";
 
-    var width = 200, height = 100;
-    window.grid = Life.initGrid(width, height);
+    var width = 250,
+        height = 100;
+    var grid = Life.initGrid(width, height);
 
     var interval;
 
@@ -195,25 +272,16 @@
     </div>
 
     <footer>
-      <div class="container">
-        &copy; 2015 Nick Reynolds
-        <br />
-        <a href="mailto:ndreynolds@gmail.com">Email</a> /
-        <a href="https://github.com/ndreynolds">GitHub</a> /
-        <a href="http://ndreynolds.com">ndreynolds.com</a>
-        <br />
-        Generated by <a href="http://jaspervdj.be/hakyll/">hakyll</a>.
-      </div>
-    </footer>
+  <div class="container">
+    &copy; 2019 Nick Reynolds
+    <br />
+    <a href="mailto:ndreynolds@gmail.com">Email</a> /
+    <a href="https://github.com/ndreynolds">GitHub</a> /
+    <a href="http://ndreynolds.com">ndreynolds.com</a>
+    <br />
+    Generated by <a href="http://jaspervdj.be/hakyll/">hakyll</a>.
+  </div>
+</footer>
 
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-      ga('create', 'UA-21708094-3', 'auto');
-      ga('send', 'pageview');
-    </script>
   </body>
 </html>

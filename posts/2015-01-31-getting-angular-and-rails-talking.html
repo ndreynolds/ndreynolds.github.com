@@ -1,14 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Nick Reynolds</title>
-    <link href="http://fonts.googleapis.com/css?family=PT+Sans:300,600,400" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="../css/normalize.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="../css/skeleton.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="../css/styles.css" type="text/css" media="all" />
-    <script type="text/javascript" src="../js/life.js"></script>
+    <title>Getting AngularJS and Rails talking | Nick Reynolds</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="../css/vendor.css" type="text/css" media="all" />
+<link rel="stylesheet" href="../css/site.css" type="text/css" media="all" />
+<script type="text/javascript" src="../js/life.js"></script>
+
   </head>
   <body>
     <div class="skinny-header"></div>
@@ -19,9 +18,16 @@
       <div class="container container-narrow">
   <div class="post-wrapper row section">
     <h1 class="post-title">Getting AngularJS and Rails talking</h1>
+    
     <h5 class="post-date"><em>January 31, 2015</em></h5>
-    <hr>
-    <p>In this post, I want to explore a few of the ways to exchange data between a Rails app and an AngularJS module—looking at the pros and cons of each approach. While Angular sees a lot of usage in single-page applications (SPAs), I’ve found it just as useful for enhancing certain pages of a Rails application with more dynamic interfaces, while sticking to plain, scaffoldable CRUD screens for the rest of the app.</p>
+    <hr />
+    <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#json-endpoints-in-the-rails-controller">JSON endpoints in the Rails controller</a></li>
+<li><a href="#nginit-and-nginitial">ngInit (and ngInitial)</a></li>
+<li><a href="#using-script-tags">Using script tags</a></li>
+<li><a href="#json-data-attributes">JSON data attributes</a></li>
+</ul></div>
+<p>In this post, I want to explore a few of the ways to exchange data between a Rails app and an AngularJS module—looking at the pros and cons of each approach. While Angular sees a lot of usage in single-page applications (SPAs), I’ve found it just as useful for enhancing certain pages of a Rails application with more dynamic interfaces, while sticking to plain, scaffoldable CRUD screens for the rest of the app.</p>
 <!--more-->
 <p>With this approach, it doesn’t make sense to kick HAML to the curb, turn your Rails app into a JSON API, and render everything on the client side. Rails may not be the new kid on the block anymore, but it has a lot of mature gems that make putting together a complex site a breeze.</p>
 <p>With that in mind, it’s not always clear how best to combine the two technologies:</p>
@@ -31,18 +37,18 @@
 </ul>
 <h3 id="json-endpoints-in-the-rails-controller">JSON endpoints in the Rails controller</h3>
 <p>The first approach is to provide a JSON format for the resource in your controller. Imagine we wanted to implement client-side filtering of a short list of items in a store’s inventory. We can easily add a JSON format to the index action:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># app/controllers/items_controller.rb</span>
-<span class="kw">class</span> <span class="dt">ItemsController</span> &lt; <span class="dt">ApplicationController</span>
-  <span class="kw">def</span> index
-    <span class="ot">@items</span> = <span class="dt">Item</span>.all
-    respond_to <span class="kw">do</span> |format|
-      format.html <span class="co"># index.html.erb</span>
-      format.json { render json: <span class="ot">@items</span> }
-    <span class="kw">end</span>
-  <span class="kw">end</span>
-
-  <span class="co"># other actions...</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># app/controllers/items_controller.rb</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">class</span> <span class="dt">ItemsController</span> &lt; <span class="dt">ApplicationController</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">def</span> index</a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="ot">@items</span> = <span class="dt">Item</span>.all</a>
+<a class="sourceLine" id="cb1-5" title="5">    respond_to <span class="kw">do</span> |format|</a>
+<a class="sourceLine" id="cb1-6" title="6">      format.html <span class="co"># index.html.erb</span></a>
+<a class="sourceLine" id="cb1-7" title="7">      format.json { render <span class="st">json: </span><span class="ot">@items</span> }</a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="co"># other actions...</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">end</span></a></code></pre></div>
 <p>Then from our HAML template, we’ll provide the Angular templating to dynamically render the items:</p>
 <pre class="haml"><code># app/views/items/index.html.haml
 %input(type=&quot;text&quot; ng-model=&quot;search&quot;)
@@ -57,14 +63,14 @@
       %td {{ item.name }}
       %td {{ item.price | currency }}</code></pre>
 <p>Lastly, we’ll initialize the scope’s <code>items</code> array by requesting the data as JSON from the Rails server using the <code>$http</code> service.</p>
-<pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="co">// app/assets/javascripts/items/items_controller.js</span>
-<span class="ot">angular</span>.<span class="fu">module</span>(<span class="st">'inventoryManager'</span>)
-  .<span class="fu">controller</span>(<span class="st">'ItemsController'</span>, <span class="kw">function</span>($scope, $http) {
-    <span class="ot">$scope</span>.<span class="fu">items</span> = [];
-
-    <span class="ot">$http</span>.<span class="fu">get</span>(<span class="st">'/items.json'</span>)
-      .<span class="fu">success</span>(<span class="kw">function</span>(data) { <span class="ot">$scope</span>.<span class="fu">items</span> = <span class="ot">data</span>.<span class="fu">items</span>; });
-  });</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// app/assets/javascripts/items/items_controller.js</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">'inventoryManager'</span>)</a>
+<a class="sourceLine" id="cb3-3" title="3">  .<span class="at">controller</span>(<span class="st">'ItemsController'</span><span class="op">,</span> <span class="kw">function</span>($scope<span class="op">,</span> $http) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">$scope</span>.<span class="at">items</span> <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="va">$http</span>.<span class="at">get</span>(<span class="st">'/items.json'</span>)</a>
+<a class="sourceLine" id="cb3-7" title="7">      .<span class="at">success</span>(<span class="kw">function</span>(data) <span class="op">{</span> <span class="va">$scope</span>.<span class="at">items</span> <span class="op">=</span> <span class="va">data</span>.<span class="at">items</span><span class="op">;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
 <p>I like this approach, but it has a few issues:</p>
 <ul>
 <li>The items are requested in an additional HTTP request and we’re only handling the success case. We’ve introduced the possibility that the second request fails and the user sees an empty list of items. In a production app, we’d have to add error-handling for that case, which comes with some added complexity.</li>
@@ -81,35 +87,35 @@
     = f.input :taxable, 'ng-model' =&gt; 'taxable', 'ng-init' =&gt; &quot;taxable = #{@item.taxable.to_json}&quot;
     = f.input :tax_rate, 'ng-if' =&gt; 'taxable'</code></pre>
 <p>Then from the Angular controller, there’s not much left to do:</p>
-<pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="co">// app/assets/javascripts/items/item_form_controller.js</span>
-<span class="ot">angular</span>.<span class="fu">module</span>(<span class="st">'inventoryViewer'</span>)
-  .<span class="fu">controller</span>(<span class="st">'ItemFormController'</span>, <span class="kw">function</span>($scope, $http) {
-    <span class="co">// We don't need to add any code here for the above to work.</span>
-  });</code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="co">// app/assets/javascripts/items/item_form_controller.js</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">'inventoryViewer'</span>)</a>
+<a class="sourceLine" id="cb5-3" title="3">  .<span class="at">controller</span>(<span class="st">'ItemFormController'</span><span class="op">,</span> <span class="kw">function</span>($scope<span class="op">,</span> $http) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="co">// We don't need to add any code here for the above to work.</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
 <p>While this a decent strategy for simple use cases like above, it’s easy to abuse and mixing Ruby and Angular templates can get ugly. A slightly cleaner approach is to use something like the <code>ngInitial</code> directive from <a href="http://stackoverflow.com/a/17823590">this StackOverflow answer</a>. This directive sets the initial value of the <code>$scope</code> variable using the <code>value</code> attribute, which will be set automatically by the form helper. I’ve slightly modified the directive below to also handle checkbox inputs:</p>
-<pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="ot">angular</span>.<span class="fu">module</span>(<span class="st">'inventoryManager'</span>).<span class="fu">directive</span>(<span class="st">'ngInitial'</span>, <span class="kw">function</span>() {
-  <span class="kw">return</span> {
-    <span class="dt">restrict</span>: <span class="st">'A'</span>,
-    <span class="dt">controller</span>: [
-      <span class="st">'$scope'</span>, <span class="st">'$element'</span>, <span class="st">'$attrs'</span>, <span class="st">'$parse'</span>, <span class="kw">function</span>($scope, $element, $attrs, $parse) {
-
-        <span class="kw">function</span> <span class="fu">parseVal</span>() {
-          <span class="kw">if</span> (<span class="ot">$attrs</span>.<span class="fu">type</span> === <span class="st">'checkbox'</span>) {
-            <span class="kw">return</span> !!<span class="ot">$attrs</span>.<span class="fu">checked</span>;
-          } <span class="kw">else</span> {
-            <span class="kw">return</span> <span class="ot">$attrs</span>.<span class="fu">value</span>;
-          }
-        }
-
-        <span class="kw">var</span> getter, setter, val;
-        val = <span class="ot">$attrs</span>.<span class="fu">ngInitial</span> || <span class="fu">parseVal</span>();
-        getter = <span class="fu">$parse</span>(<span class="ot">$attrs</span>.<span class="fu">ngModel</span>);
-        setter = <span class="ot">getter</span>.<span class="fu">assign</span>;
-        <span class="fu">setter</span>($scope, val);
-      }
-    ]
-  };
-});</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">'inventoryManager'</span>).<span class="at">directive</span>(<span class="st">'ngInitial'</span><span class="op">,</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="dt">restrict</span><span class="op">:</span> <span class="st">'A'</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="dt">controller</span><span class="op">:</span> [</a>
+<a class="sourceLine" id="cb6-5" title="5">      <span class="st">'$scope'</span><span class="op">,</span> <span class="st">'$element'</span><span class="op">,</span> <span class="st">'$attrs'</span><span class="op">,</span> <span class="st">'$parse'</span><span class="op">,</span> <span class="kw">function</span>($scope<span class="op">,</span> $element<span class="op">,</span> $attrs<span class="op">,</span> $parse) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7">        <span class="kw">function</span> <span class="at">parseVal</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-8" title="8">          <span class="cf">if</span> (<span class="va">$attrs</span>.<span class="at">type</span> <span class="op">===</span> <span class="st">'checkbox'</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-9" title="9">            <span class="cf">return</span> <span class="op">!!</span><span class="va">$attrs</span>.<span class="at">checked</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">          <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-11" title="11">            <span class="cf">return</span> <span class="va">$attrs</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">          <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-13" title="13">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-14" title="14"></a>
+<a class="sourceLine" id="cb6-15" title="15">        <span class="kw">var</span> getter<span class="op">,</span> setter<span class="op">,</span> val<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">        val <span class="op">=</span> <span class="va">$attrs</span>.<span class="at">ngInitial</span> <span class="op">||</span> <span class="at">parseVal</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-17" title="17">        getter <span class="op">=</span> <span class="at">$parse</span>(<span class="va">$attrs</span>.<span class="at">ngModel</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18">        setter <span class="op">=</span> <span class="va">getter</span>.<span class="at">assign</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-19" title="19">        <span class="at">setter</span>($scope<span class="op">,</span> val)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-21" title="21">    ]</a>
+<a class="sourceLine" id="cb6-22" title="22">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-23" title="23"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
 <p>It can then be used in the above HAML view like so:</p>
 <pre class="haml"><code># app/views/items/_form.html.haml
 %div(ng-controller=&quot;ItemFormController&quot;)
@@ -122,22 +128,22 @@
 <pre class="haml"><code># app/views/items/index.html.haml
 :javascript
   window.items = #{@items.to_json};</code></pre>
-<pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="co">// app/assets/javascripts/items/items_controller.js</span>
-<span class="ot">angular</span>.<span class="fu">module</span>(<span class="st">'inventoryManager'</span>)
-  .<span class="fu">controller</span>(<span class="st">'ItemsController'</span>, <span class="kw">function</span>($scope) {
-    <span class="ot">$scope</span>.<span class="fu">items</span> = <span class="ot">window</span>.<span class="fu">items</span>;
-  });</code></pre>
+<div class="sourceCode" id="cb9"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="co">// app/assets/javascripts/items/items_controller.js</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">'inventoryManager'</span>)</a>
+<a class="sourceLine" id="cb9-3" title="3">  .<span class="at">controller</span>(<span class="st">'ItemsController'</span><span class="op">,</span> <span class="kw">function</span>($scope) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-4" title="4">    <span class="va">$scope</span>.<span class="at">items</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">items</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
 <p>While this is a bit simpler than requesting the data with the <code>$http</code> service and does work quite well, using global variables means the angular app loses its nice encapsulation, which can make testing problematic. Global variables also of course come with problems of their own.</p>
 <h3 id="json-data-attributes">JSON data attributes</h3>
 <p>Another approach is to render the data as JSON to data attributes. By adding a <code>data-items</code> attribute to the element with the <code>ng-controller</code> attribute, you can easily access the data with an injected <code>$element</code> dependency.</p>
 <pre class="haml"><code># app/views/items/index.html.haml
 %ul{ 'ng-controller' =&gt; 'ItemsController', 'data-items' =&gt; items.to_json }
   %li(ng-repeat=&quot;item in items&quot;) {{ item.name }}</code></pre>
-<pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="co">// app/assets/javascripts/items/items_controller.js</span>
-<span class="ot">angular</span>.<span class="fu">module</span>(<span class="st">'inventoryManager'</span>)
-  .<span class="fu">controller</span>(<span class="st">'ItemsController'</span>, <span class="kw">function</span>($scope, $element) {
-    <span class="ot">$scope</span>.<span class="fu">items</span> = <span class="ot">$element</span>.<span class="fu">data</span>(<span class="st">'items'</span>);
-  });</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="co">// app/assets/javascripts/items/items_controller.js</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">'inventoryManager'</span>)</a>
+<a class="sourceLine" id="cb11-3" title="3">  .<span class="at">controller</span>(<span class="st">'ItemsController'</span><span class="op">,</span> <span class="kw">function</span>($scope<span class="op">,</span> $element) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-4" title="4">    <span class="va">$scope</span>.<span class="at">items</span> <span class="op">=</span> <span class="va">$element</span>.<span class="at">data</span>(<span class="st">'items'</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
 <p>This is my favorite approach in cases where a JSON endpoint doesn’t make sense. The <code>$element</code> dependency can be mocked, so the code is easily-testable. It doesn’t rely on global variables, so the app is still nicely encapsulated. On top of that, we also avoid making another request.</p>
   </div>
 </div>
@@ -145,23 +151,16 @@
     </div>
 
     <footer>
-      <div class="container">
-        &copy; 2015 Nick Reynolds
-        <br />
-        <a href="mailto:ndreynolds@gmail.com">Email</a> /
-        <a href="https://github.com/ndreynolds">GitHub</a> /
-        <a href="https://github.com/ndreynolds">ndreynolds.com</a>
-      </div>
-    </footer>
+  <div class="container">
+    &copy; 2019 Nick Reynolds
+    <br />
+    <a href="mailto:ndreynolds@gmail.com">Email</a> /
+    <a href="https://github.com/ndreynolds">GitHub</a> /
+    <a href="http://ndreynolds.com">ndreynolds.com</a>
+    <br />
+    Generated by <a href="http://jaspervdj.be/hakyll/">hakyll</a>.
+  </div>
+</footer>
 
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-      ga('create', 'UA-21708094-3', 'auto');
-      ga('send', 'pageview');
-    </script>
   </body>
 </html>

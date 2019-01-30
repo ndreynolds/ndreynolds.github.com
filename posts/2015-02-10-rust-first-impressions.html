@@ -1,14 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Nick Reynolds</title>
-    <link href="http://fonts.googleapis.com/css?family=PT+Sans:300,600,400" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="../css/normalize.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="../css/skeleton.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="../css/styles.css" type="text/css" media="all" />
-    <script type="text/javascript" src="../js/life.js"></script>
+    <title>Rust: First Impressions | Nick Reynolds</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="../css/vendor.css" type="text/css" media="all" />
+<link rel="stylesheet" href="../css/site.css" type="text/css" media="all" />
+<script type="text/javascript" src="../js/life.js"></script>
+
   </head>
   <body>
     <div class="skinny-header"></div>
@@ -19,9 +18,16 @@
       <div class="container container-narrow">
   <div class="post-wrapper row section">
     <h1 class="post-title">Rust: First Impressions</h1>
+    
     <h5 class="post-date"><em>February 10, 2015</em></h5>
-    <hr>
-    <p>I recently decided to give the <a href="http://rust-lang.org">Rust programming language</a> a try. Although Rust had crossed my radar a few times before, I’d never gotten much further than <em>Hello World!</em>. The language has undergone a lot of change over the last few years, but things appear to finally be slowing down for its upcoming 1.0 release.</p>
+    <hr />
+    <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#the-project">The Project</a></li>
+<li><a href="#the-good">The Good</a></li>
+<li><a href="#the-bad">The Bad</a></li>
+<li><a href="#wrapping-up">Wrapping Up</a></li>
+</ul></div>
+<p>I recently decided to give the <a href="http://rust-lang.org">Rust programming language</a> a try. Although Rust had crossed my radar a few times before, I’d never gotten much further than <em>Hello World!</em>. The language has undergone a lot of change over the last few years, but things appear to finally be slowing down for its upcoming 1.0 release.</p>
 <!--more-->
 <h3 id="the-project">The Project</h3>
 <p>My latest encounter with Rust began when I set out to write a ray tracer to get some experience with graphics programming. I initially considered a few different languages.</p>
@@ -51,47 +57,47 @@ dependencies = [
 ]</code></pre>
 <h4 id="support-for-testing">Support for Testing</h4>
 <p>Rust has some really cool built-in support for unit testing. This is great because every roadblock to writing tests makes them that much less likely to get written. In Rust, tests can be tagged with a <code>#[test]</code> attribute and added directly to the source file:</p>
-<pre class="sourceCode rust"><code class="sourceCode rust"><span class="kw">impl</span> Vector {
-    <span class="kw">pub</span> <span class="kw">fn</span> length(&amp;<span class="kw">self</span>) -&gt; <span class="kw">f64</span> {
-        (Float::powf(<span class="kw">self</span>.x, <span class="dv">2.0</span>) + Float::powf(<span class="kw">self</span>.y, <span class="dv">2.0</span>) + Float::powf(<span class="kw">self</span>.z, <span class="dv">2.0</span>)).sqrt()
-    }
-}
-
-<span class="ot">#[</span>test<span class="ot">]</span>
-<span class="kw">fn</span> test_vector_length() {
-    <span class="kw">let</span> subject = Vector{ x: <span class="dv">1.0</span>, y: <span class="dv">1.0</span>, z: <span class="dv">1.0</span> };
-    <span class="ot">assert_eq!</span>(subject.length(), (<span class="dv">3.0</span> <span class="kw">as</span> <span class="kw">f64</span>).sqrt());
-}</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">impl</span> Vector <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="kw">pub</span> <span class="kw">fn</span> length(&amp;<span class="kw">self</span>) -&gt; <span class="dt">f64</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">        (<span class="pp">Float::</span>powf(<span class="kw">self</span>.x, <span class="dv">2.0</span>) + <span class="pp">Float::</span>powf(<span class="kw">self</span>.y, <span class="dv">2.0</span>) + <span class="pp">Float::</span>powf(<span class="kw">self</span>.z, <span class="dv">2.0</span>)).sqrt()</a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="at">#[</span>test<span class="at">]</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="kw">fn</span> test_vector_length() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="kw">let</span> subject = Vector<span class="op">{</span> x: <span class="dv">1.0</span>, y: <span class="dv">1.0</span>, z: <span class="dv">1.0</span> <span class="op">}</span>;</a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="pp">assert_eq!</span>(subject.length(), (<span class="dv">3.0</span> <span class="kw">as</span> <span class="dt">f64</span>).sqrt());</a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a></code></pre></div>
 <p>Once you’ve set up your project with Cargo, tests are easy to run:</p>
-<pre class="sourceCode bash"><code class="sourceCode bash">$ <span class="kw">cargo</span> test
-<span class="kw">Compiling</span> rustray v0.0.1 (file:///Users/ndreynolds/repos/rustray)
-<span class="kw">Running</span> target/rustray-7f062fec34db6a8c
-
-<span class="kw">running</span> 1 test
-<span class="kw">test</span> test_vector_length ... ok
-
-<span class="kw">test</span> result: ok. 1 passed<span class="kw">;</span> <span class="kw">0</span> failed<span class="kw">;</span> <span class="kw">0</span> ignored<span class="kw">;</span> <span class="kw">0</span> measured</code></pre>
-<h4 id="safety-vs.flexibility">Safety vs. Flexibility</h4>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1">$ <span class="ex">cargo</span> test</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="ex">Compiling</span> rustray v0.0.1 (file:///Users/ndreynolds/repos/rustray)</a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="ex">Running</span> target/rustray-7f062fec34db6a8c</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="ex">running</span> 1 test</a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="bu">test</span> test_vector_length ... ok</a>
+<a class="sourceLine" id="cb4-7" title="7"></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="bu">test</span> result: ok. 1 passed<span class="kw">;</span> <span class="ex">0</span> failed<span class="kw">;</span> <span class="ex">0</span> ignored<span class="kw">;</span> <span class="ex">0</span> measured</a></code></pre></div>
+<h4 id="safety-vs.-flexibility">Safety vs. Flexibility</h4>
 <p>Every language seems to make its own trade-offs between safety (protecting the programmer from him or herself) and flexibility (which allows you to do useful things). The protections that prevent you from unsafe memory access or type errors always come at the cost of some flexibility.</p>
 <p>With C, you’re free to do whatever you want to your bits. If GCC doesn’t like the types you’ve assigned, you can always cast your way out of it—future segmentation faults notwithstanding. Haskell is on the other end of the spectrum. Its rigid type system protects you from all sorts of silly mistakes, but its functional purity makes normally simple things like printing to stdout or getting a random number considerably more difficult.</p>
 <p>Rust seems to aim for somewhere in the middle of the two extremes. I think one of the clear goals of Rust is to provide a safer choice for the sort of systems programming that C or C++ is typically used for. One way to achieve safety is to prevent the programmer from doing anything useful, but I don’t think that’s the case here.</p>
 <p>Rust encourages safety by providing reasonable defaults, but there’s usually an escape hatch if you need to do something not-so-safe (which can happen every now and then in the real world). By default, variable bindings are immutable, which means any mutation must be made explicit.</p>
-<pre class="sourceCode rust"><code class="sourceCode rust"><span class="co">// Variable bindings are immutable by default:</span>
-<span class="kw">let</span> x = <span class="dv">42</span>;
-<span class="co">// x += 1;   &lt;-- Can't do this</span>
-
-<span class="co">// But if you later decide you need a mutable binding, you have that option:</span>
-<span class="kw">let</span> <span class="kw">mut</span> y = <span class="dv">42</span>;
-y += <span class="dv">1</span>;        </code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb5-1" title="1"><span class="co">// Variable bindings are immutable by default:</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">let</span> x = <span class="dv">42</span>;</a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="co">// x += 1;   &lt;-- Can't do this</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="co">// But if you later decide you need a mutable binding, you have that option:</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="kw">let</span> <span class="kw">mut</span> y = <span class="dv">42</span>;</a>
+<a class="sourceLine" id="cb5-7" title="7">y += <span class="dv">1</span>;</a></code></pre></div>
 <p>Rust also forgoes null pointers and encourages an <a href="http://doc.rust-lang.org/std/option/index.html">Option</a> type (similar to Swift’s optional and Haskell’s Maybe monad) to represent a value that may be absent. In languages like Java, null pointers often mean null pointer exceptions. With an optional type, the compiler can enforce that you handle both scenarios (i.e., value presence <em>and</em> absence). In my project, one example of this was checking for an intersection when tracing a ray. An intersection only occurs if there’s an object in the ray’s traced path, so it may be absent:</p>
-<pre class="sourceCode rust"><code class="sourceCode rust"><span class="co">// Matches on an Option&lt;Intersection&gt;</span>
-<span class="kw">match</span> <span class="kw">self</span>.find_intersection(ray) {
-  <span class="kw">Some</span>(isect) =&gt; <span class="kw">self</span>.get_shade(isect, depth),
-  <span class="kw">None</span>        =&gt; Pixel::black()
-}
-
-<span class="co">// You can also use `unwrap`, which fails if the value is None.</span>
-<span class="kw">let</span> isect : Intersection = <span class="kw">self</span>.find_intersection(ray).unwrap();</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb6-1" title="1"><span class="co">// Matches on an Option&lt;Intersection&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">match</span> <span class="kw">self</span>.find_intersection(ray) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="cn">Some</span>(isect) =&gt; <span class="kw">self</span>.get_shade(isect, depth),</a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="cn">None</span>        =&gt; <span class="pp">Pixel::</span>black()</a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="co">// You can also use `unwrap`, which fails if the value is None.</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="kw">let</span> isect : Intersection = <span class="kw">self</span>.find_intersection(ray).unwrap();</a></code></pre></div>
 <h3 id="the-bad">The Bad</h3>
 <p>There were a few things I didn’t like about Rust. I’m sure most of these are just due to my inexperience with the language or Rust being a relatively new language.</p>
 <h4 id="unstable-apis">Unstable APIs</h4>
@@ -101,36 +107,29 @@ y += <span class="dv">1</span>;        </code></pre>
 <p>One of the trade-offs made in exchange for all the nice things about Rust is that it takes a while to get off the ground. For me at least, it’s not a language like Python or Ruby that you can start making useful things with on your first day. Using Rust effectively is predicated on having a good understanding of the language. As a beginner, I struggled with compiler error messages that seemed cryptic taken out of context (mostly due to borrowing or ownership problems), but once I’d read more of the official book, they did start to make more sense. Moreover, like Haskell, Rust has a powerful type system and gives you a lot of rope to hang yourself with. I got stuck a few times when trying to define and deserialize a polymorphic “shape” type.</p>
 <h4 id="lifetime-syntax">Lifetime Syntax</h4>
 <p>I think Rust generally has pretty nice syntax. I like its Ruby-style closures (<code>|x| x * x</code>). While I like the ownership paradigm, I’m not sold on the syntax for defining lifetimes. The terse <code>a</code>, <code>b</code>, <code>c</code> identifiers combined with the borrowed and mutable symbols can start to feel like reading and writing hieroglyphics:</p>
-<pre class="sourceCode rust"><code class="sourceCode rust"><span class="kw">fn</span> foobar&lt;<span class="ot">'a</span>, <span class="ot">'b</span>&gt;(x1: &amp;<span class="kw">mut</span> Foo&lt;<span class="ot">'a</span>&gt;, y1: &amp;<span class="ot">'a</span> Bar, x2: &amp;<span class="kw">mut</span> Foo&lt;<span class="ot">'b</span>&gt;, y2: &amp;<span class="ot">'b</span> Bar) {
-  <span class="co">// ...</span>
-}</code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">fn</span> foobar&lt;<span class="ot">'a</span>, <span class="ot">'b</span>&gt;(x1: &amp;<span class="kw">mut</span> Foo&lt;<span class="ot">'a</span>&gt;, y1: &amp;<span class="ot">'a</span> Bar, x2: &amp;<span class="kw">mut</span> Foo&lt;<span class="ot">'b</span>&gt;, y2: &amp;<span class="ot">'b</span> Bar) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="op">}</span></a></code></pre></div>
 <p>Sure, I imagine this will get easier to read with time, but I wouldn’t mind some Java-style verbosity here.</p>
 <h3 id="wrapping-up">Wrapping Up</h3>
 <p>I was going to add a “The Ugly” section to complete the trifecta, but my experience with Rust has actually been a really pleasant one. I’m sure the API stability and documentation will only improve with time.</p>
-<p>With that said, I don’t think Rust is a good general purpose programming language. I don’t plan to use Rust for web programming any time soon. When it comes to rapid development, I think the extra cognitive overhead in dealing with ownership and complexities like <code>String</code> vs. <code>&amp;str</code> make it hard sell against something like Ruby. But for problems in Rust’s wheelhouse—like system tools or operating systems or media decoders—where you need speed and safety, it’s a really great tool to have.</p>
+<p>With that said, I don’t think Rust is a good general purpose programming language. I don’t plan to use Rust for web programming any time soon. When it comes to rapid development, I think the extra cognitive overhead in dealing with ownership and complexities like <code>String</code> vs. <code>&amp;str</code> make it hard sell against something like Ruby. But for problems in Rust’s wheelhouse—like system tools or operating systems or media decoders—where you need speed and safety, it’s a really great tool to have.</p>
   </div>
 </div>
 
     </div>
 
     <footer>
-      <div class="container">
-        &copy; 2015 Nick Reynolds
-        <br />
-        <a href="mailto:ndreynolds@gmail.com">Email</a> /
-        <a href="https://github.com/ndreynolds">GitHub</a> /
-        <a href="https://github.com/ndreynolds">ndreynolds.com</a>
-      </div>
-    </footer>
+  <div class="container">
+    &copy; 2019 Nick Reynolds
+    <br />
+    <a href="mailto:ndreynolds@gmail.com">Email</a> /
+    <a href="https://github.com/ndreynolds">GitHub</a> /
+    <a href="http://ndreynolds.com">ndreynolds.com</a>
+    <br />
+    Generated by <a href="http://jaspervdj.be/hakyll/">hakyll</a>.
+  </div>
+</footer>
 
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-      ga('create', 'UA-21708094-3', 'auto');
-      ga('send', 'pageview');
-    </script>
   </body>
 </html>

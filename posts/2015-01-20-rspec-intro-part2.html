@@ -1,14 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Nick Reynolds</title>
-    <link href="http://fonts.googleapis.com/css?family=PT+Sans:300,600,400" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="../css/normalize.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="../css/skeleton.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="../css/styles.css" type="text/css" media="all" />
-    <script type="text/javascript" src="../js/life.js"></script>
+    <title>Testing Rails apps with RSpec: Part II | Nick Reynolds</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="../css/vendor.css" type="text/css" media="all" />
+<link rel="stylesheet" href="../css/site.css" type="text/css" media="all" />
+<script type="text/javascript" src="../js/life.js"></script>
+
   </head>
   <body>
     <div class="skinny-header"></div>
@@ -19,9 +18,24 @@
       <div class="container container-narrow">
   <div class="post-wrapper row section">
     <h1 class="post-title">Testing Rails apps with RSpec: Part II</h1>
+    
     <h5 class="post-date"><em>January 20, 2015</em></h5>
-    <hr>
-    <p>In this two-part series, I cover testing a Rails application using RSpec and some other popular gems. If you missed Part 1, you can catch up here.</p>
+    <hr />
+    <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#model-specs">Model specs</a><ul>
+<li><a href="#defining-factories">Defining Factories</a></li>
+<li><a href="#testing-validations">Testing Validations</a></li>
+<li><a href="#testing-methods">Testing Methods</a></li>
+</ul></li>
+<li><a href="#controller-specs">Controller specs</a></li>
+<li><a href="#feature-a.k.a-acceptance-specs">Feature (a.k.a, Acceptance) specs</a><ul>
+<li><a href="#interacting-with-javascript">Interacting with JavaScript</a></li>
+</ul></li>
+<li><a href="#wrapping-up">Wrapping Up</a></li>
+<li><a href="#more-resources">More Resources</a></li>
+</ul></div>
+<p>In this two-part series, I cover testing a Rails application using RSpec and some other popular gems. If you missed Part 1, you can catch up here.</p>
 <!--more-->
 <p>In Part 2, with the setup out of the way, we’ll dive into writing tests for the various components of a Rails app.</p>
 <p>Before diving in, I will say that some of this may be a bit opinionated. When I’m testing a Rails app, my goal is to get the most bang for my buck—that is, the most test coverage for the fewest lines of test code. If you find that a test requiring extensive mocking or brittle networking logic begins taking up more than its share of your development time, in my book it’s fine to just <code>git rm</code> it and move on. Likewise, while getting to 100% coverage is a noble goal, it isn’t always as realistic (in the face of schedule and budget constraints) or as helpful (think: future refactoring) as it might seem. The real objective isn’t to hit some arbitrary percentage—it’s to make your app more reliable for your users and prevent regressions as you develop it.</p>
@@ -63,67 +77,67 @@
 <p>In these examples, imagine we’re building an app to compare cars, trucks, and SUVs. To that end, we’ll have a <code>Vehicle</code> model with attributes like the vehicle’s make, model, year and style.</p>
 <h3 id="defining-factories">Defining Factories</h3>
 <p>To make it easier to generate instances of our model in specs, we’ll create factories using the <code>factory_girl</code> gem. Here’s an example factory definition for our <code>Vehicle</code> model that we’ll use in future examples:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/factories/vehicles.rb</span>
-<span class="dt">FactoryGirl</span>.define <span class="kw">do</span>
-  factory <span class="st">:vehicle</span> <span class="kw">do</span>
-    model   <span class="st">'Prius'</span>
-    make    <span class="st">'Toyota'</span>
-    year    <span class="dv">2014</span>
-    style   <span class="st">'Car'</span>
-
-    trait <span class="st">:truck</span> <span class="kw">do</span>
-      model  <span class="st">'F-150'</span>
-      make   <span class="st">'Ford'</span>
-      style  <span class="st">'Truck'</span>
-    <span class="kw">end</span>
-
-    trait <span class="st">:suv</span> <span class="kw">do</span>
-      model  <span class="st">'Escalade'</span>
-      make   <span class="st">'Cadilac'</span>
-      style  <span class="st">'SUV'</span>
-    <span class="kw">end</span>
-  <span class="kw">end</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># spec/factories/vehicles.rb</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="dt">FactoryGirl</span>.define <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  factory <span class="st">:vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    model   <span class="st">'Prius'</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    make    <span class="st">'Toyota'</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    year    <span class="dv">2014</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    style   <span class="st">'Car'</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9">    trait <span class="st">:truck</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-10" title="10">      model  <span class="st">'F-150'</span></a>
+<a class="sourceLine" id="cb1-11" title="11">      make   <span class="st">'Ford'</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      style  <span class="st">'Truck'</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15">    trait <span class="st">:suv</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-16" title="16">      model  <span class="st">'Escalade'</span></a>
+<a class="sourceLine" id="cb1-17" title="17">      make   <span class="st">'Cadilac'</span></a>
+<a class="sourceLine" id="cb1-18" title="18">      style  <span class="st">'SUV'</span></a>
+<a class="sourceLine" id="cb1-19" title="19">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-20" title="20">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="kw">end</span></a></code></pre></div>
 <p>In the factory definition above, we describe how to create a vehicle by assigning some default values for each attribute. To use the new factory, we’ll just need to call <code>build(:vehicle)</code> (to make an instance) or <code>create(:vehicle)</code> (to make an instance and persist it to the data store) inside the specs. More on that in a moment.</p>
 <p>We also define two <strong>traits</strong>, one for trucks and one for SUVs. Traits allow you to easily apply a group of attributes to your factory. How you use them is largely up to you. In short, traits let us write this:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby">create(<span class="st">:vehicle</span>, <span class="st">:truck</span>)</code></pre>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb2-1" title="1">create(<span class="st">:vehicle</span>, <span class="st">:truck</span>)</a></code></pre></div>
 <p>…instead of this:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby">create(<span class="st">:vehicle</span>, model: <span class="st">'F-150'</span>, make: <span class="st">'Ford'</span>, style: <span class="st">'Truck'</span>)</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb3-1" title="1">create(<span class="st">:vehicle</span>, <span class="st">model: 'F-150'</span>, <span class="st">make: 'Ford'</span>, <span class="st">style: 'Truck'</span>)</a></code></pre></div>
 <p>One approach you might also consider is generating random data in your factories. This had the advantage of making sure your app works with a broader range of inputs. The <code>ffaker</code> gem is great for this purpose. In essence, <code>ffaker</code> generates fake data for a number of common fields like names, phone numbers, addresses, and as it happens: vehicles. Here’s how we might re-define the vehicle factory with <code>ffaker</code>:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/factories/vehicles.rb</span>
-<span class="dt">FactoryGirl</span>.define <span class="kw">do</span>
-  factory <span class="st">:vehicle</span> <span class="kw">do</span>
-    model   { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.model }
-    make    { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.make  }
-    year    { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.year  }
-    style   <span class="st">'Car'</span>
-  <span class="kw">end</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb4"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb4-1" title="1"><span class="co"># spec/factories/vehicles.rb</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="dt">FactoryGirl</span>.define <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  factory <span class="st">:vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    model   { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.model }</a>
+<a class="sourceLine" id="cb4-5" title="5">    make    { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.make  }</a>
+<a class="sourceLine" id="cb4-6" title="6">    year    { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.year  }</a>
+<a class="sourceLine" id="cb4-7" title="7">    style   <span class="st">'Car'</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="kw">end</span></a></code></pre></div>
 <p>Notice that we need to use blocks for these calls so that they’re reevaluated each time. To be completely correct here, you could add additional logic to ensure that the make, model, year and style all agree. With this definition, we might generate a 1950 Tesla F-150 car, but for some tests that’s okay. Here’s how you could go improving this:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby">factory <span class="st">:vehicle</span> <span class="kw">do</span>
-  model { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.model }
-  make  { |vehicle| make_for_model(vehicle.model)  }
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb5-1" title="1">factory <span class="st">:vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  model { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.model }</a>
+<a class="sourceLine" id="cb5-3" title="3">  make  { |vehicle| make_for_model(vehicle.model)  }</a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">end</span></a></code></pre></div>
 <h3 id="testing-validations">Testing Validations</h3>
 <p>Imagine we’d like to require that all vehicles have a year. When users enter new vehicles without a year, validation should fail and they should be required to enter it in order to continue. To make sure that happens, we’ll need to ensure that our validation in the <code>Vehicle</code> model is working correctly.</p>
 <p>The model definition:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># app/models/vehicle.rb</span>
-<span class="kw">class</span> <span class="dt">Vehicle</span> &lt; <span class="dt">ActiveRecord</span>::<span class="dt">Base</span>
-  validates <span class="st">:year</span>, presence: <span class="dv">true</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb6-1" title="1"><span class="co"># app/models/vehicle.rb</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">class</span> <span class="dt">Vehicle</span> &lt; <span class="dt">ActiveRecord</span>::<span class="dt">Base</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  validates <span class="st">:year</span>, <span class="st">presence: </span><span class="dv">true</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="kw">end</span></a></code></pre></div>
 <p>The model spec:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/models/vehicle_spec.rb</span>
-require <span class="st">'rails_helper'</span>
-
-describe <span class="dt">Vehicle</span> <span class="kw">do</span>
-  it <span class="st">'has a valid factory'</span> <span class="kw">do</span>
-    expect(build(<span class="st">:vehicle</span>)).to be_valid
-  <span class="kw">end</span>
-
-  it <span class="st">'is invalid without a year'</span> <span class="kw">do</span>
-    expect(build(<span class="st">:vehicle</span>, year: <span class="dv">nil</span>)).to_not be_valid
-  <span class="kw">end</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb7-1" title="1"><span class="co"># spec/models/vehicle_spec.rb</span></a>
+<a class="sourceLine" id="cb7-2" title="2">require <span class="st">'rails_helper'</span></a>
+<a class="sourceLine" id="cb7-3" title="3"></a>
+<a class="sourceLine" id="cb7-4" title="4">describe <span class="dt">Vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-5" title="5">  it <span class="st">'has a valid factory'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-6" title="6">    expect(build(<span class="st">:vehicle</span>)).to be_valid</a>
+<a class="sourceLine" id="cb7-7" title="7">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9">  it <span class="st">'is invalid without a year'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-10" title="10">    expect(build(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>)).to_not be_valid</a>
+<a class="sourceLine" id="cb7-11" title="11">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-12" title="12"><span class="kw">end</span></a></code></pre></div>
 <p>In case you’re not familiar with RSpec’s DSL, we’ll take a quick detour and cover the three important pieces here:</p>
 <ul>
 <li><code>describe</code> defines a group of examples and takes the entity (e.g., model, method, etc.) being specified.</li>
@@ -135,39 +149,39 @@ describe <span class="dt">Vehicle</span> <span class="kw">do</span>
 <h3 id="testing-methods">Testing Methods</h3>
 <p>Imagine our app will display the average fuel-efficiency (MPG) for each vehicle based on user-submitted values. There’s now an <code>MpgSubmission</code> model and a <code>has_many</code> relationship defined in the <code>Vehicle</code> model. To quickly get the average MPG for a vehicle, we’ll add an <code>average_mpg</code> method to the <code>Vehicle</code> model that will average the MPG submissions.</p>
 <p>To make it interesting, we’ll add an additional constraint: if there are fewer than 10 submissions, the method should return nil to indicate insufficient data.</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># app/models/vehicle.rb</span>
-<span class="kw">class</span> <span class="dt">Vehicle</span>
-  has_many <span class="st">:mpg_submissions</span>
-
-  <span class="dt">MPG_SUBMISSIONS_NEEDED</span> = <span class="dv">10</span>
-
-  <span class="kw">def</span> average_mpg
-    <span class="kw">if</span> mpg_submissions.count &gt;= <span class="dt">MPG_SUBMISSIONS_NEEDED</span>
-      mpg_submissions.average(<span class="st">:mpg</span>)
-    <span class="kw">else</span>
-      <span class="dv">nil</span>
-    <span class="kw">end</span>
-  <span class="kw">end</span>
-<span class="kw">end</span></code></pre>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/models/vehicle_spec.rb</span>
-require <span class="st">'rails_helper'</span>
-
-describe <span class="dt">Vehicle</span> <span class="kw">do</span>
-  subject { create(<span class="st">:vehicle</span>) }
-
-  describe <span class="st">'#average_mpg'</span>
-    it <span class="st">'returns nil if there are fewer submissions than required'</span>
-      <span class="dv">9</span>.times.each { create(<span class="st">:mpg_submission</span>, mpg: <span class="dv">25</span>, vehicle: subject) }
-      expect(subject.average_mpg).to be_nil
-    <span class="kw">end</span>
-
-    it <span class="st">'returns the average if there are enough submissions'</span>
-      <span class="dv">5</span>.times.each { create(<span class="st">:mpg_submission</span>, mpg: <span class="dv">25</span>, vehicle: subject) }
-      <span class="dv">5</span>.times.each { create(<span class="st">:mpg_submission</span>, mpg: <span class="dv">30</span>, vehicle: subject) }
-      expect(subject.average_mpg).to eq(<span class="fl">27.5</span>)
-    <span class="kw">end</span>
-  <span class="kw">end</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb8-1" title="1"><span class="co"># app/models/vehicle.rb</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">class</span> <span class="dt">Vehicle</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  has_many <span class="st">:mpg_submissions</span></a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="dt">MPG_SUBMISSIONS_NEEDED</span> = <span class="dv">10</span></a>
+<a class="sourceLine" id="cb8-6" title="6"></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">def</span> average_mpg</a>
+<a class="sourceLine" id="cb8-8" title="8">    <span class="kw">if</span> mpg_submissions.count &gt;= <span class="dt">MPG_SUBMISSIONS_NEEDED</span></a>
+<a class="sourceLine" id="cb8-9" title="9">      mpg_submissions.average(<span class="st">:mpg</span>)</a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="kw">else</span></a>
+<a class="sourceLine" id="cb8-11" title="11">      <span class="dv">nil</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb8-13" title="13">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb8-14" title="14"><span class="kw">end</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb9-1" title="1"><span class="co"># spec/models/vehicle_spec.rb</span></a>
+<a class="sourceLine" id="cb9-2" title="2">require <span class="st">'rails_helper'</span></a>
+<a class="sourceLine" id="cb9-3" title="3"></a>
+<a class="sourceLine" id="cb9-4" title="4">describe <span class="dt">Vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-5" title="5">  subject { create(<span class="st">:vehicle</span>) }</a>
+<a class="sourceLine" id="cb9-6" title="6"></a>
+<a class="sourceLine" id="cb9-7" title="7">  describe <span class="st">'#average_mpg'</span></a>
+<a class="sourceLine" id="cb9-8" title="8">    it <span class="st">'returns nil if there are fewer submissions than required'</span></a>
+<a class="sourceLine" id="cb9-9" title="9">      <span class="dv">9</span>.times.each { create(<span class="st">:mpg_submission</span>, <span class="st">mpg: </span><span class="dv">25</span>, <span class="st">vehicle: </span>subject) }</a>
+<a class="sourceLine" id="cb9-10" title="10">      expect(subject.average_mpg).to be_nil</a>
+<a class="sourceLine" id="cb9-11" title="11">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb9-12" title="12"></a>
+<a class="sourceLine" id="cb9-13" title="13">    it <span class="st">'returns the average if there are enough submissions'</span></a>
+<a class="sourceLine" id="cb9-14" title="14">      <span class="dv">5</span>.times.each { create(<span class="st">:mpg_submission</span>, <span class="st">mpg: </span><span class="dv">25</span>, <span class="st">vehicle: </span>subject) }</a>
+<a class="sourceLine" id="cb9-15" title="15">      <span class="dv">5</span>.times.each { create(<span class="st">:mpg_submission</span>, <span class="st">mpg: </span><span class="dv">30</span>, <span class="st">vehicle: </span>subject) }</a>
+<a class="sourceLine" id="cb9-16" title="16">      expect(subject.average_mpg).to eq(<span class="fl">27.5</span>)</a>
+<a class="sourceLine" id="cb9-17" title="17">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb9-18" title="18">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb9-19" title="19"><span class="kw">end</span></a></code></pre></div>
 <p>I like to create a <code>describe</code> block for each method that will be tested, using the syntax <code>#instance_method</code> and <code>.class_method</code> to indicate what is being described. This helps with quickly associating example groups with the source code being tested.</p>
 <p>In the above spec, we test both sides of the if-expression—an example for the case that there are fewer MPG submissions than required and an example for the case that the requirement is met. In the latter case, we also verify that the average agrees with our test data.</p>
 <p>While there may be other scenarios we could test here, these examples cover this method fairly well—all branches are tested and there are no obvious nil issues (<code>ActiveRecord::Calculations.average</code> will handle nil <code>mpg</code> values and we’d likely have a database constraint to eliminate that possibility anyway).</p>
@@ -185,82 +199,82 @@ describe <span class="dt">Vehicle</span> <span class="kw">do</span>
 <li>If access to the action is restricted, does the authentication and authorization logic work as expected?</li>
 <li>Does the action return the correct status code? (important for json format)</li>
 </ul>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># app/controllers/vehicles_controller.rb</span>
-<span class="kw">class</span> <span class="dt">VehiclesController</span> &lt; <span class="dt">ApplicationController</span>
-  <span class="kw">def</span> create
-    <span class="ot">@vehicle</span> = <span class="dt">Vehicle</span>.new(vehicle_params)
-    
-    respond_to <span class="kw">do</span> |format|
-      <span class="kw">if</span> <span class="ot">@vehicle</span>.save
-        format.html { redirect_to vehicle_path(<span class="ot">@vehicle</span>), notice: <span class="st">'Vehicle was successfully created.'</span> }
-        format.json { render json: <span class="ot">@vehicle</span>, status: <span class="st">:created</span>, location: <span class="ot">@vehicle</span> }
-      <span class="kw">else</span>
-        format.html { render action: <span class="st">'new'</span> }
-        format.json { render json: <span class="ot">@vehicle</span>.errors, status: <span class="st">:unprocessable_entity</span> }
-      <span class="kw">end</span>
-    <span class="kw">end</span>
-  <span class="kw">end</span>
-
-  <span class="co"># of course you'd probably define other actions as well...</span>
-<span class="kw">end</span></code></pre>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/controllers/vehicles_controller_spec.rb</span>
-require <span class="st">'rails_helper'</span>
-
-describe <span class="dt">VehiclesController</span> <span class="kw">do</span>
-  describe <span class="st">'POST #create'</span> <span class="kw">do</span>
-    context <span class="st">'html'</span>
-      context <span class="st">'with valid attributes'</span> <span class="kw">do</span>
-        it <span class="st">'creates the vehicle'</span> <span class="kw">do</span>
-          post <span class="st">:create</span>, vehicle: attributes_for(<span class="st">:vehicle</span>)
-          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">1</span>)
-        <span class="kw">end</span>
-  
-        it <span class="st">'redirects to the &quot;show&quot; action for the new vehicle'</span> <span class="kw">do</span>
-          post <span class="st">:create</span>, vehicle: attributes_for(<span class="st">:vehicle</span>)
-          expect(response).to redirect_to <span class="dt">Vehicle</span>.first
-        <span class="kw">end</span>
-      <span class="kw">end</span>
-  
-      context <span class="st">'with invalid attributes'</span> <span class="kw">do</span>
-        it <span class="st">'does not create the vehicle'</span> <span class="kw">do</span>
-          post <span class="st">:create</span>, vehicle: attributes_for(<span class="st">:vehicle</span>, year: <span class="dv">nil</span>)
-          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">0</span>)
-        <span class="kw">end</span>
-  
-        it <span class="st">'re-renders the &quot;new&quot; view'</span> <span class="kw">do</span>
-          post <span class="st">:create</span>, vehicle: attributes_for(<span class="st">:vehicle</span>, year: <span class="dv">nil</span>)
-          expect(response).to render_template <span class="st">:new</span>
-        <span class="kw">end</span>
-      <span class="kw">end</span>
-    <span class="kw">end</span>
-
-    context <span class="st">'json'</span> <span class="kw">do</span>
-      context <span class="st">'with valid attributes'</span> <span class="kw">do</span>
-        it <span class="st">'creates the vehicle'</span> <span class="kw">do</span>
-          post <span class="st">:create</span>, vehicle: attributes_for(<span class="st">:vehicle</span>), format: <span class="st">:json</span>
-          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">1</span>)
-        <span class="kw">end</span>
-
-        it <span class="st">'responds with 201'</span> <span class="kw">do</span>
-          post <span class="st">:create</span>, vehicle: attributes_for(<span class="st">:vehicle</span>), format: <span class="st">:json</span>
-          expect(response.status).to eq(<span class="dv">201</span>)
-        <span class="kw">end</span>
-      <span class="kw">end</span>
-  
-      context <span class="st">'with invalid attributes'</span> <span class="kw">do</span>
-        it <span class="st">'does not create the vehicle'</span> <span class="kw">do</span>
-          post <span class="st">:create</span>, vehicle: attributes_for(<span class="st">:vehicle</span>, year: <span class="dv">nil</span>), format: <span class="st">:json</span>
-          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">0</span>)
-        <span class="kw">end</span>
-
-        it <span class="st">'responds with 422'</span> <span class="kw">do</span>
-          post <span class="st">:create</span>, vehicle: attributes_for(<span class="st">:vehicle</span>, year: <span class="dv">nil</span>), format: <span class="st">:json</span>
-          expect(response.status).to eq(<span class="dv">422</span>)
-        <span class="kw">end</span>
-      <span class="kw">end</span>
-    <span class="kw">end</span>
-  <span class="kw">end</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb10-1" title="1"><span class="co"># app/controllers/vehicles_controller.rb</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">class</span> <span class="dt">VehiclesController</span> &lt; <span class="dt">ApplicationController</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  <span class="kw">def</span> create</a>
+<a class="sourceLine" id="cb10-4" title="4">    <span class="ot">@vehicle</span> = <span class="dt">Vehicle</span>.new(vehicle_params)</a>
+<a class="sourceLine" id="cb10-5" title="5"></a>
+<a class="sourceLine" id="cb10-6" title="6">    respond_to <span class="kw">do</span> |format|</a>
+<a class="sourceLine" id="cb10-7" title="7">      <span class="kw">if</span> <span class="ot">@vehicle</span>.save</a>
+<a class="sourceLine" id="cb10-8" title="8">        format.html { redirect_to vehicle_path(<span class="ot">@vehicle</span>), <span class="st">notice: 'Vehicle was successfully created.'</span> }</a>
+<a class="sourceLine" id="cb10-9" title="9">        format.json { render <span class="st">json: </span><span class="ot">@vehicle</span>, <span class="st">status: :created</span>, <span class="st">location: </span><span class="ot">@vehicle</span> }</a>
+<a class="sourceLine" id="cb10-10" title="10">      <span class="kw">else</span></a>
+<a class="sourceLine" id="cb10-11" title="11">        format.html { render <span class="st">action: 'new'</span> }</a>
+<a class="sourceLine" id="cb10-12" title="12">        format.json { render <span class="st">json: </span><span class="ot">@vehicle</span>.errors, <span class="st">status: :unprocessable_entity</span> }</a>
+<a class="sourceLine" id="cb10-13" title="13">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb10-14" title="14">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb10-15" title="15">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb10-16" title="16"></a>
+<a class="sourceLine" id="cb10-17" title="17">  <span class="co"># of course you'd probably define other actions as well...</span></a>
+<a class="sourceLine" id="cb10-18" title="18"><span class="kw">end</span></a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb11-1" title="1"><span class="co"># spec/controllers/vehicles_controller_spec.rb</span></a>
+<a class="sourceLine" id="cb11-2" title="2">require <span class="st">'rails_helper'</span></a>
+<a class="sourceLine" id="cb11-3" title="3"></a>
+<a class="sourceLine" id="cb11-4" title="4">describe <span class="dt">VehiclesController</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-5" title="5">  describe <span class="st">'POST #create'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-6" title="6">    context <span class="st">'html'</span></a>
+<a class="sourceLine" id="cb11-7" title="7">      context <span class="st">'with valid attributes'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-8" title="8">        it <span class="st">'creates the vehicle'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-9" title="9">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>)</a>
+<a class="sourceLine" id="cb11-10" title="10">          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb11-11" title="11">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-12" title="12"></a>
+<a class="sourceLine" id="cb11-13" title="13">        it <span class="st">'redirects to the &quot;show&quot; action for the new vehicle'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-14" title="14">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>)</a>
+<a class="sourceLine" id="cb11-15" title="15">          expect(response).to redirect_to <span class="dt">Vehicle</span>.first</a>
+<a class="sourceLine" id="cb11-16" title="16">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-17" title="17">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-18" title="18"></a>
+<a class="sourceLine" id="cb11-19" title="19">      context <span class="st">'with invalid attributes'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-20" title="20">        it <span class="st">'does not create the vehicle'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-21" title="21">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>)</a>
+<a class="sourceLine" id="cb11-22" title="22">          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb11-23" title="23">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-24" title="24"></a>
+<a class="sourceLine" id="cb11-25" title="25">        it <span class="st">'re-renders the &quot;new&quot; view'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-26" title="26">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>)</a>
+<a class="sourceLine" id="cb11-27" title="27">          expect(response).to render_template <span class="st">:new</span></a>
+<a class="sourceLine" id="cb11-28" title="28">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-29" title="29">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-30" title="30">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-31" title="31"></a>
+<a class="sourceLine" id="cb11-32" title="32">    context <span class="st">'json'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-33" title="33">      context <span class="st">'with valid attributes'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-34" title="34">        it <span class="st">'creates the vehicle'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-35" title="35">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>), format: <span class="st">:json</span></a>
+<a class="sourceLine" id="cb11-36" title="36">          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb11-37" title="37">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-38" title="38"></a>
+<a class="sourceLine" id="cb11-39" title="39">        it <span class="st">'responds with 201'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-40" title="40">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>), format: <span class="st">:json</span></a>
+<a class="sourceLine" id="cb11-41" title="41">          expect(response.status).to eq(<span class="dv">201</span>)</a>
+<a class="sourceLine" id="cb11-42" title="42">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-43" title="43">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-44" title="44"></a>
+<a class="sourceLine" id="cb11-45" title="45">      context <span class="st">'with invalid attributes'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-46" title="46">        it <span class="st">'does not create the vehicle'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-47" title="47">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>), format: <span class="st">:json</span></a>
+<a class="sourceLine" id="cb11-48" title="48">          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb11-49" title="49">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-50" title="50"></a>
+<a class="sourceLine" id="cb11-51" title="51">        it <span class="st">'responds with 422'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-52" title="52">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>), format: <span class="st">:json</span></a>
+<a class="sourceLine" id="cb11-53" title="53">          expect(response.status).to eq(<span class="dv">422</span>)</a>
+<a class="sourceLine" id="cb11-54" title="54">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-55" title="55">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-56" title="56">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-57" title="57">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-58" title="58"><span class="kw">end</span></a></code></pre></div>
 <p>There’s a lot going on in the above specs. We use the <code>context</code></p>
 <h2 id="feature-a.k.a-acceptance-specs">Feature (a.k.a, Acceptance) specs</h2>
 <p>Feature specs are a type of integration test. Whereas unit tests are concerned with individual components, integration tests focus on how they work together. An app with unit tests but no integration tests is like a pile of individually-tested car parts with no assurance that they can work together to make a drivable car.</p>
@@ -273,32 +287,32 @@ describe <span class="dt">VehiclesController</span> <span class="kw">do</span>
 </ul>
 <p>To write feature specs for Rails, we’ll use Capybara, a Ruby gem which lets us automate the browser to interact with web pages like a user would—that is, by clicking, typing and selecting.</p>
 <p>The following is a basic feature spec for logging in to the site. We’ll visit the sign in url, fill in credentials, and submit the form. To verify that we were successful, we’ll then look for a success message afterwards.</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/features/user_sign_in_spec.rb</span>
-
-require <span class="st">'rails_helper'</span>
-
-feature <span class="st">'User signs in'</span> <span class="kw">do</span>
-  scenario <span class="st">'with valid credentials'</span> <span class="kw">do</span>
-    visit sign_in_path
-    fill_in <span class="st">'Username'</span>, with: <span class="st">'joe.example'</span>
-    fill_in <span class="st">'Password'</span>, with: <span class="st">'passw0rd'</span> 
-    click_on <span class="st">'Sign In'</span>
-
-    expect(page).to have_content(<span class="st">'You have successfully signed in!'</span>)
-  <span class="kw">end</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb12-1" title="1"><span class="co"># spec/features/user_sign_in_spec.rb</span></a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3">require <span class="st">'rails_helper'</span></a>
+<a class="sourceLine" id="cb12-4" title="4"></a>
+<a class="sourceLine" id="cb12-5" title="5">feature <span class="st">'User signs in'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-6" title="6">  scenario <span class="st">'with valid credentials'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-7" title="7">    visit sign_in_path</a>
+<a class="sourceLine" id="cb12-8" title="8">    fill_in <span class="st">'Username'</span>, <span class="st">with: 'joe.example'</span></a>
+<a class="sourceLine" id="cb12-9" title="9">    fill_in <span class="st">'Password'</span>, <span class="st">with: 'passw0rd'</span></a>
+<a class="sourceLine" id="cb12-10" title="10">    click_on <span class="st">'Sign In'</span></a>
+<a class="sourceLine" id="cb12-11" title="11"></a>
+<a class="sourceLine" id="cb12-12" title="12">    expect(page).to have_content(<span class="st">'You have successfully signed in!'</span>)</a>
+<a class="sourceLine" id="cb12-13" title="13">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-14" title="14"><span class="kw">end</span></a></code></pre></div>
 <p>With feature specs, it’s important to maintain a certain level of abstraction. If you’ve written good model and controller specs, you don’t need to be concerned with the low-level details here. While we might take a cursory glance at the database to ensure that the expected change was actually made, we’re primarily concerned with the user seeing what they should be seeing. In this case: seeing is believing.</p>
 <h3 id="interacting-with-javascript">Interacting with JavaScript</h3>
 <p>It’s likely that at one point or another, your feature specs will need to interact with JavaScript-dependent functionality—maybe there’s a confirmation dialog that needs to be accepted or content that is loaded dynamically.</p>
 <p>Although Capybara’s default <code>Rack::Test</code> driver does not support JavaScript, it’s easy enough to switch to one that does for feature specs requiring it. You can read more about the available drivers <a href="https://github.com/jnicklas/capybara#drivers">here</a>. If you plan to run specs on a server without X11 (or an alternative) installed, PhantomJS via Poltergeist is a good choice.</p>
 <p>The below example, while contrived, demonstrates how expectations can be made about dynamic content, as well as how JavaScript code can be executed from the feature spec.</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby">feature <span class="st">'User views dynamic Hello World message'</span> <span class="kw">do</span>
-  it <span class="st">'displays Hello World'</span>, js: <span class="dv">true</span> <span class="kw">do</span>
-    visit root_path
-    page.execute_script <span class="st">&quot;document.write('Hello World!')&quot;</span> 
-    expect(page).to have_content(<span class="st">'Hello World!'</span>)
-  <span class="kw">end</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb13"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb13-1" title="1">feature <span class="st">'User views dynamic Hello World message'</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb13-2" title="2">  it <span class="st">'displays Hello World'</span>, <span class="st">js: </span><span class="dv">true</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb13-3" title="3">    visit root_path</a>
+<a class="sourceLine" id="cb13-4" title="4">    page.execute_script <span class="st">&quot;document.write('Hello World!')&quot;</span></a>
+<a class="sourceLine" id="cb13-5" title="5">    expect(page).to have_content(<span class="st">'Hello World!'</span>)</a>
+<a class="sourceLine" id="cb13-6" title="6">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb13-7" title="7"><span class="kw">end</span></a></code></pre></div>
 <p>As an aside, trying to test JS-heavy apps from Capybara can unfortunately be a world of pain. As the setup typically involves multiple threads or processes—your Rails app being one and the browser being the other—it leads to all sorts of timing issues. Race conditions, driver differences, and random AJAX failures all conspire to make these tests brittle and hard to debug. I’ve started to avoid these types of tests altogether and rely instead on client-side testing with <a href="http://mochajs.org/">Mocha</a> and <a href="http://karma-runner.github.io/0.12/index.html">Karma</a> for JS-heavy pages.</p>
 <h2 id="wrapping-up">Wrapping Up</h2>
 <p>One thing you may have noticed is that controller specs have a good deal of overlap with model and feature specs. While there are advantages to having controller specs, I’ve found that most things they test can be covered by feature specs. If you only have time for one or the other, go with feature specs. They prove that your app works in an actual browser—rather than just from a cURL client, which is as far as controller specs will get you.</p>
@@ -314,23 +328,16 @@ feature <span class="st">'User signs in'</span> <span class="kw">do</span>
     </div>
 
     <footer>
-      <div class="container">
-        &copy; 2015 Nick Reynolds
-        <br />
-        <a href="mailto:ndreynolds@gmail.com">Email</a> /
-        <a href="https://github.com/ndreynolds">GitHub</a> /
-        <a href="https://github.com/ndreynolds">ndreynolds.com</a>
-      </div>
-    </footer>
+  <div class="container">
+    &copy; 2019 Nick Reynolds
+    <br />
+    <a href="mailto:ndreynolds@gmail.com">Email</a> /
+    <a href="https://github.com/ndreynolds">GitHub</a> /
+    <a href="http://ndreynolds.com">ndreynolds.com</a>
+    <br />
+    Generated by <a href="http://jaspervdj.be/hakyll/">hakyll</a>.
+  </div>
+</footer>
 
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-      ga('create', 'UA-21708094-3', 'auto');
-      ga('send', 'pageview');
-    </script>
   </body>
 </html>

@@ -1,14 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Nick Reynolds</title>
-    <link href="http://fonts.googleapis.com/css?family=PT+Sans:300,600,400" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="../css/normalize.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="../css/skeleton.css" type="text/css" media="all" />
-    <link rel="stylesheet" href="../css/styles.css" type="text/css" media="all" />
-    <script type="text/javascript" src="../js/life.js"></script>
+    <title>Testing Rails apps with RSpec: Part I | Nick Reynolds</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+<link rel="stylesheet" href="../css/vendor.css" type="text/css" media="all" />
+<link rel="stylesheet" href="../css/site.css" type="text/css" media="all" />
+<script type="text/javascript" src="../js/life.js"></script>
+
   </head>
   <body>
     <div class="skinny-header"></div>
@@ -19,9 +18,21 @@
       <div class="container container-narrow">
   <div class="post-wrapper row section">
     <h1 class="post-title">Testing Rails apps with RSpec: Part I</h1>
+    
     <h5 class="post-date"><em>July 15, 2014</em></h5>
-    <hr>
-    <p>In this two-part series, I’ll cover testing a Rails application—from how to get set up with the latest toolchain, to writing those first tests.</p>
+    <hr />
+    <div class="toc"><h3>Contents</h3><ul>
+<li><a href="#but-first-why-write-tests">But first, why write tests?</a></li>
+<li><a href="#testing-a-rails-4-app-with-rspec-3">Testing a Rails 4 app with RSpec 3</a></li>
+<li><a href="#configure-your-gemfile">Configure your Gemfile</a></li>
+<li><a href="#run-generators">Run generators</a></li>
+<li><a href="#configure-capybara">Configure Capybara</a></li>
+<li><a href="#configure-database_cleaner">Configure <code>database_cleaner</code></a></li>
+<li><a href="#the-.rspec-file">The <code>.rspec</code> file</a></li>
+<li><a href="#generating-specs">Generating specs</a></li>
+<li><a href="#wrapping-up">Wrapping Up</a></li>
+</ul></div>
+<p>In this two-part series, I’ll cover testing a Rails application—from how to get set up with the latest toolchain, to writing those first tests.</p>
 <!--more-->
 <p>In Part 1, I’ll look at how to set up and configure <a href="https://github.com/rspec/rspec-rails">RSpec 3</a> (with <a href="https://github.com/thoughtbot/factory_girl_rails">Factory Girl</a> and <a href="https://github.com/jnicklas/capybara">Capybara</a>) for a Rails 4 app, and how to generate and run your first specs. Next time, in Part 2, we’ll look at writing model, controller and feature specs.</p>
 <h2 id="but-first-why-write-tests">But first, why write tests?</h2>
@@ -29,11 +40,11 @@
 <p>It’s no silver bullet. There will probably still be bugs from scenarios you never thought to test. But even if they can’t catch every bug, tests provide you with confidence that your app works as intended on a basic level. This is all the more important if you didn’t write the app to begin with, or if you’re part of a big team—you won’t always know what effects your changes might have. There might be features you don’t even know about. Ultimately, a solid test suite means less to worry about for you, the developer, and with any luck, a more stable product for the user.</p>
 <h2 id="testing-a-rails-4-app-with-rspec-3">Testing a Rails 4 app with RSpec 3</h2>
 <p>I really like RSpec. If you’re more of a minimalist, you can always skip the extra gems and use the built-in minitest, but I like the additional features and clean DSL that RSpec provides. For example, to test that a variable is nil:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># minitest</span>
-assert_nil obj
-
-<span class="co"># RSpec</span>
-expect(obj).to be_nil</code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># minitest</span></a>
+<a class="sourceLine" id="cb1-2" title="2">assert_nil obj</a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="co"># RSpec</span></a>
+<a class="sourceLine" id="cb1-5" title="5">expect(obj).to be_nil</a></code></pre></div>
 <p>It’s a matter of taste, but I prefer RSpec’s more human-readable style. Here, we’ll use RSpec 3.0, which landed back in May, and brings a few new changes into the fold (See here for more info: <a href="http://myronmars.to/n/dev-blog/2014/05/notable-changes-in-rspec-3">Notable Changes in RSpec 3</a>).</p>
 <p>In addition to RSpec, we’ll also set up Factory Girl as a fixture replacement, Capybara for browser-level acceptance (a.k.a. integration) tests, and Database Cleaner for cleaning up between test scenarios.</p>
 <p>When you write tests, you’ll need test data. As a fixture replacement, <strong>Factory Girl</strong> helps you build instances of your models for use in test scenarios. This is accomplished through factories in which you define how to build the instances. Although it’s nothing you couldn’t do yourself with plain old ActiveRecord methods and some helper methods, Factory Girl provides a nice system for setting defaults (and then overriding them) that keeps a lot of boilerplate out of your code.</p>
@@ -41,47 +52,47 @@ expect(obj).to be_nil</code></pre>
 <p>By default, test scenarios are wrapped in a database transaction so that each scenario’s changes can be rolled back, so as to not cause side effects when running other scenarios later. But when using Capybara’s JavaScript driver, this causes some trouble, as these scenarios are run in another thread which doesn’t share the database connection, leading to unexpected behavior. To avoid headaches down the road, we’ll also use the <strong><code>database_cleaner</code></strong> gem to adjust the way the database cleanup is done. (See <a href="http://devblog.avdi.org/2012/08/31/configuring-database_cleaner-with-rails-rspec-capybara-and-selenium/">this post</a> for more details.)</p>
 <h2 id="configure-your-gemfile">Configure your Gemfile</h2>
 <p>Let’s get started. Assuming you’re working inside a new Rails 4 app, add the following to your <code>Gemfile</code> and then <code>bundle install</code>.</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby">group <span class="st">:development</span>, <span class="st">:test</span> <span class="kw">do</span>
-  gem <span class="st">'rspec-rails'</span>, <span class="st">'~&gt; 3.0.0'</span>
-  gem <span class="st">'factory_girl_rails'</span>
-  gem <span class="st">'capybara'</span>
-  gem <span class="st">'database_cleaner'</span>
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb2-1" title="1">group <span class="st">:development</span>, <span class="st">:test</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  gem <span class="st">'rspec-rails'</span>, <span class="st">'~&gt; 3.0.0'</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  gem <span class="st">'factory_girl_rails'</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  gem <span class="st">'capybara'</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  gem <span class="st">'database_cleaner'</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">end</span></a></code></pre></div>
 <h2 id="run-generators">Run generators</h2>
 <p>Next, run the RSpec generator to create the initial skeleton:</p>
 <pre><code>rails generate rspec:install</code></pre>
 <h2 id="configure-capybara">Configure Capybara</h2>
 <p>To make Capybara available from within RSpec specs, add the following line to <code>spec/rails_helper.rb</code>:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/rails_helper.rb</span>
-require <span class="st">'capybara/rails'</span></code></pre>
+<div class="sourceCode" id="cb4"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb4-1" title="1"><span class="co"># spec/rails_helper.rb</span></a>
+<a class="sourceLine" id="cb4-2" title="2">require <span class="st">'capybara/rails'</span></a></code></pre></div>
 <p>Your Capybara feature specs will also need a home, add the <code>spec/features/</code> directory:</p>
 <pre><code>mkdir spec/features</code></pre>
 <h2 id="configure-database_cleaner">Configure <code>database_cleaner</code></h2>
 <p>Next, make the following adjustments to <code>spec/rails_helper.rb</code> to integrate the <code>database_cleaner</code> gem:</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby">config.use_transactional_fixtures = <span class="dv">false</span></code></pre>
-<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="dt">RSpec</span>.configure <span class="kw">do</span> |config|
-
-  config.before(<span class="st">:suite</span>) <span class="kw">do</span>
-    <span class="dt">DatabaseCleaner</span>.clean_with(<span class="st">:truncation</span>)
-  <span class="kw">end</span>
-
-  config.before(<span class="st">:each</span>) <span class="kw">do</span>
-    <span class="dt">DatabaseCleaner</span>.strategy = <span class="st">:transaction</span>
-  <span class="kw">end</span>
-
-  config.before(<span class="st">:each</span>, <span class="st">:js</span> =&gt; <span class="dv">true</span>) <span class="kw">do</span>
-    <span class="dt">DatabaseCleaner</span>.strategy = <span class="st">:truncation</span>
-  <span class="kw">end</span>
-
-  config.before(<span class="st">:each</span>) <span class="kw">do</span>
-    <span class="dt">DatabaseCleaner</span>.start
-  <span class="kw">end</span>
-
-  config.after(<span class="st">:each</span>) <span class="kw">do</span>
-    <span class="dt">DatabaseCleaner</span>.clean
-  <span class="kw">end</span>
-
-<span class="kw">end</span></code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb6-1" title="1">config.use_transactional_fixtures = <span class="dv">false</span></a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb7-1" title="1"><span class="dt">RSpec</span>.configure <span class="kw">do</span> |config|</a>
+<a class="sourceLine" id="cb7-2" title="2"></a>
+<a class="sourceLine" id="cb7-3" title="3">  config.before(<span class="st">:suite</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="dt">DatabaseCleaner</span>.clean_with(<span class="st">:truncation</span>)</a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-6" title="6"></a>
+<a class="sourceLine" id="cb7-7" title="7">  config.before(<span class="st">:each</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-8" title="8">    <span class="dt">DatabaseCleaner</span>.strategy = <span class="st">:transaction</span></a>
+<a class="sourceLine" id="cb7-9" title="9">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-10" title="10"></a>
+<a class="sourceLine" id="cb7-11" title="11">  config.before(<span class="st">:each</span>, <span class="st">:js</span> =&gt; <span class="dv">true</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-12" title="12">    <span class="dt">DatabaseCleaner</span>.strategy = <span class="st">:truncation</span></a>
+<a class="sourceLine" id="cb7-13" title="13">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-14" title="14"></a>
+<a class="sourceLine" id="cb7-15" title="15">  config.before(<span class="st">:each</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-16" title="16">    <span class="dt">DatabaseCleaner</span>.start</a>
+<a class="sourceLine" id="cb7-17" title="17">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-18" title="18"></a>
+<a class="sourceLine" id="cb7-19" title="19">  config.after(<span class="st">:each</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-20" title="20">    <span class="dt">DatabaseCleaner</span>.clean</a>
+<a class="sourceLine" id="cb7-21" title="21">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-22" title="22"></a>
+<a class="sourceLine" id="cb7-23" title="23"><span class="kw">end</span></a></code></pre></div>
 <h2 id="the-.rspec-file">The <code>.rspec</code> file</h2>
 <p>By default, RSpec generates a <code>.rspec</code> file in your app’s root. This allows you to set different command line options (see <code>rspec -h</code>) that will be automatically picked up. The default <code>.rspec</code> includes the <code>--warnings</code> option, which can be really noisy even in a brand new Rails app. If you see a lot of warnings later on, you can hide them by removing this line.</p>
 <h2 id="generating-specs">Generating specs</h2>
@@ -137,23 +148,16 @@ Pending:
     </div>
 
     <footer>
-      <div class="container">
-        &copy; 2015 Nick Reynolds
-        <br />
-        <a href="mailto:ndreynolds@gmail.com">Email</a> /
-        <a href="https://github.com/ndreynolds">GitHub</a> /
-        <a href="https://github.com/ndreynolds">ndreynolds.com</a>
-      </div>
-    </footer>
+  <div class="container">
+    &copy; 2019 Nick Reynolds
+    <br />
+    <a href="mailto:ndreynolds@gmail.com">Email</a> /
+    <a href="https://github.com/ndreynolds">GitHub</a> /
+    <a href="http://ndreynolds.com">ndreynolds.com</a>
+    <br />
+    Generated by <a href="http://jaspervdj.be/hakyll/">hakyll</a>.
+  </div>
+</footer>
 
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-      ga('create', 'UA-21708094-3', 'auto');
-      ga('send', 'pageview');
-    </script>
   </body>
 </html>
