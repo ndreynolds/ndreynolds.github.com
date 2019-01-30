@@ -1,27 +1,18 @@
---------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid                    ( mappend )
+import           Control.Monad                  ( forM_ )
 import           Hakyll
+import           Text.Pandoc
 
-
---------------------------------------------------------------------------------
 main :: IO ()
 main = hakyll $ do
-  match "images/*" $ do
+  forM_ ["js/*", "images/*", "fonts/*"] $ \path -> match path $ do
     route idRoute
     compile copyFileCompiler
 
   match "css/*" $ do
     route idRoute
     compile compressCssCompiler
-
-  match "js/*" $ do
-    route idRoute
-    compile copyFileCompiler
-
-  match "fonts/*" $ do
-    route idRoute
-    compile copyFileCompiler
 
   match (fromList ["about.rst", "contact.markdown"]) $ do
     route $ setExtension "html"
@@ -30,10 +21,11 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/layout.html" defaultContext
       >>= relativizeUrls
 
+  match "templates/*" $ compile templateCompiler
+
   match "posts/*" $ do
     route $ setExtension "html"
-    compile
-      $   pandocCompiler
+    compile $ pandocCompilerWith defaultHakyllReaderOptions withToc
       >>= saveSnapshot "content"
       >>= loadAndApplyTemplate "templates/post.html"        postCtx
       >>= loadAndApplyTemplate "templates/post-layout.html" postCtx
@@ -53,7 +45,6 @@ main = hakyll $ do
         >>= loadAndApplyTemplate "templates/post-layout.html" archiveCtx
         >>= relativizeUrls
 
-
   match "index.html" $ do
     route idRoute
     compile $ do
@@ -67,12 +58,15 @@ main = hakyll $ do
         >>= applyAsTemplate indexCtx
         >>= loadAndApplyTemplate "templates/layout.html" indexCtx
         >>= relativizeUrls
+ where
+  withToc = defaultHakyllWriterOptions
+      { writerTableOfContents = True
+      , writerTemplate        = Just "<div class='toc'><h3>Contents</h3>$toc$</div>\n$body$"
+      }
 
-  match "templates/*" $ compile templateCompiler
 
-
---------------------------------------------------------------------------------
 postCtx :: Context String
 postCtx = dateField "date" "%B %e, %Y" `mappend` defaultContext
 
+teaserCtx :: Context String
 teaserCtx = teaserField "teaser" "content" `mappend` postCtx

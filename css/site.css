@@ -43,9 +43,29 @@ a {
   font-family: 'Source Serif Pro', serif;
 }
 
-a.sourceLine {
-  font-family: monospace;
-  font-size: 1.4rem;
+p {
+  font-size: 2.0rem;
+}
+
+blockquote {
+  border-left: 8px solid #3887be;
+  margin-left: 0;
+  background: #eee;
+  padding: 20px;
+  padding-bottom: 5px;
+}
+
+.toc {
+  padding: 10px;
+  font-size: 90%;
+}
+
+.toc ul li {
+  list-style-type: none;
+}
+
+img {
+  width: 100%;
 }
 
 .post-wrapper li {
@@ -79,7 +99,7 @@ footer a:hover {
 canvas#life {
   position: absolute;
   top: 0;
-  height: 225px;
+  height: 250px;
   width: 100%;
   animation: fadein 4s;
   -webkit-animation: fadein 4s;
@@ -94,11 +114,11 @@ ul {
   list-style-type: none;
 }
 
-ul.posts h5 {
+ul.posts h4 {
   margin-bottom: 5px;
 }
 
-ul.posts h5 a {
+ul.posts h4 a {
   text-decoration: none;
   color: #28353d;
 }
@@ -106,6 +126,10 @@ ul.posts h5 a {
 ul.posts li > em {
   display: block;
   margin-bottom: 8px;
+}
+
+ul.posts .toc {
+  display: none;
 }
 
 .post-date {
@@ -125,7 +149,6 @@ ul.posts li > em {
 }
 
 .header h3 {
-  /* font-family: 'PT Sans', sans-serif; */
   font-weight: 900;
 }
 
@@ -189,11 +212,16 @@ ul.posts li > em {
   text-align: center;
 }
 
+p code {
+  background: #eee;
+}
+
 pre,
 div.sourceCode {
   background-color:#f8f8f8;
   border: 1px solid #eee;
   border-radius: 3px;
+  font-size: 1.8rem;
 }
 
 div.sourceCode pre,
@@ -201,4 +229,16 @@ code,
 code.sourceCode {
   background-color: transparent;
   border: none;
+}
+
+a.sourceLine {
+  font-family: monospace;
+}
+
+@media (min-width: 1000px) {
+  .toc {
+    position: fixed;
+    left: 0;
+    top: 10%;
+  }
 }
