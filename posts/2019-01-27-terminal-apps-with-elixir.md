@@ -359,9 +359,9 @@ for now) a clone of the Observer GUI.
 
 The Observer GUI is divided into 8 different tabs, so that's where I started:
 
-![Observer tabs]()
+![Observer's tabs](/images/observer-tabs.png)
 
-![Toby tabs]()
+![toby's tabs](/images/toby-tabs.png)
 
 If you've ever created a computer game before, you're probably familiar with a
 game loop. A game loop processes input, updates the game state, renders the game
