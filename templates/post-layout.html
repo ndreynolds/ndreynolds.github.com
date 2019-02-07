@@ -6,14 +6,16 @@
     $partial("templates/assets.html")$
   </head>
   <body>
-    <div class="skinny-header"></div>
-    <div class="section-light">
-      <div>
-        <a class="button home-button" href="/">&laquo; Home</a>
-      </div>
-      $body$
-    </div>
+    <article>
+      <a href="/">&laquo; Home</a>
 
-    $partial("templates/footer.html")$
+      <section>
+        $body$
+      </section>
+    </article>
+
+    <section>
+      $partial("templates/footer.html")$
+    </section>
   </body>
 </html>

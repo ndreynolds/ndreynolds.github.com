@@ -1,125 +1,60 @@
-<div class="light">
-  <div class="container">
-    <div class="row section">
-      <hr>
-      <h4 class="section-title">Posts</h4>
-      <hr>
-      $partial("templates/post-list.html")$
-      <a href="/archive.html">View All</a>
-    </div>
+<h2>Posts</h2>
 
-    <div class="row section">
-      <hr>
-      <h4 class="section-title text-center">Open Source Projects</h4>
-      <hr>
-      <div class="row">
-        <div class="one-half column">
-          <img src="/images/ratatouille.png" width="100%" alt="ratatouille">
-        </div>
-        <div class="one-half column">
-          <h5>Ratatouille</h5>
-          <p>
-            A TUI (terminal UI) kit for Elixir
-          </p>
-          <a class="button" href="https://github.com/ndreynolds/ratatouille">
-            <i class="fa fa-lg fa-github"></i>
-            Source Code
-          </a>
-        </div>
-      </div>
-      <div class="row">
-        <div class="one-half column">
-          <img src="/images/toby.png" width="100%" alt="toby">
-        </div>
-        <div class="one-half column">
-          <h5>toby</h5>
-          <p>
-            A text-based Erlang observer
-          </p>
-          <a class="button" href="https://github.com/ndreynolds/toby">
-            <i class="fa fa-lg fa-github"></i>
-            Source Code
-          </a>
-        </div>
-      </div>
-      <div class="row">
-        <div class="one-half column">
-          <img src="/images/flathead.png" width="100%" alt="Flathead">
-        </div>
-        <div class="one-half column">
-          <h5>Flathead</h5>
-          <p>
-            Flathead is a tiny, portable JavaScript (ECMA-262) interpreter
-            written in C.
-          </p>
-          <a class="button" href="https://github.com/ndreynolds/flathead">
-            <i class="fa fa-lg fa-github"></i>
-            Source Code
-          </a>
-        </div>
-      </div>
-      <div class="row">
-        <div class="one-half column">
-          <img src="/images/arcs-viewer.png" width="100%" alt="Flathead">
-        </div>
-        <div class="one-half column">
-          <h5>ARCS</h5>
-          <p>
-            ARCS is an open-source web platform for humanites-based research.
-            Create, relate, organize and search digitized primary evidence.
-          </p>
-          <a class="button" href="http://arcs.cal.msu.edu/about">
-            <i class="fa fa-lg fa-link"></i>
-            Site
-          </a>
-          <a class="button" href="https://github.com/ndreynolds/arcs">
-            <i class="fa fa-lg fa-github"></i>
-            Source Code
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+$partial("templates/post-list.html")$
+<a href="/archive.html">View All</a>
 
-<script>
-  (function() {
-    var canvas = document.getElementById('life')
-    canvas.setAttribute('width', document.body.clientWidth);
+<hr />
 
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = "#4090c7";
+<h2>Open Source Projects</h2>
 
-    var width = 250,
-        height = 100;
-    var grid = Life.initGrid(width, height);
+<h3>Ratatouille</h3>
+<p>
+  <span class="marginnote">
+    A declarative TUI (terminal UI) kit for Elixir
 
-    var interval;
+    <br/>
+    <br/>
+    <a href="https://github.com/ndreynolds/ratatouille">Source Code</a>
+  </span>
+  <img src="/images/ratatouille.png" alt="ratatouille">
+</p>
 
-    function updateCanvas() {
-      for (var y = 0; y < height; y++) {
-        for (var x = 0; x < width; x++) {
-          window.Life.drawCell(ctx, grid, x, y, 8);
-        }
-      }
-    }
+<h3>toby</h3>
+<p>
+  <span class="marginnote">
+    A text-based Erlang observer
 
-    function startInterval(intervalMs) {
-      interval = setInterval(function() {
-        grid = Life.nextGeneration(grid);
-        updateCanvas();
-      }, intervalMs);
-    }
+    <br/>
+    <br/>
+    <a href="https://github.com/ndreynolds/toby">Source Code</a>
+  </span>
+  <img src="/images/toby.png" alt="toby">
+</p>
 
-    function stopInterval(afterMs) {
-      setTimeout(function() {
-        clearInterval(interval);
-        canvas.remove();
-      }, afterMs);
-    }
+<h3>Flathead</h3>
+<p>
+  <span class="marginnote">
+    Flathead is a tiny, portable JavaScript (ECMA-262) interpreter
+    written in C.
 
-    updateCanvas();
-    startInterval(150);
-    stopInterval(30000);
-  }());
-</script>
+    <br/>
+    <br/>
+    <a href="https://github.com/ndreynolds/flathead">Source Code</a>
+  </span>
+  <img src="/images/flathead.png" alt="Flathead">
+</p>
+
+<h3>ARCS</h3>
+<p>
+  <span class="marginnote">
+    ARCS is an open-source web platform for humanites-based research.
+    Create, relate, organize and search digitized primary evidence.
+
+    <br/>
+    <br/>
+    <a href="http://arcs.cal.msu.edu/about">Site</a>
+    <br/>
+    <a href="https://github.com/ndreynolds/arcs">Source Code</a>
+  </span>
+  <img src="/images/arcs-viewer.png" alt="ARCS">
+</p>

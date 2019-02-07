@@ -3,6 +3,7 @@ import           Data.Monoid                    ( mappend )
 import           Control.Monad                  ( forM_ )
 import           Hakyll
 import           Text.Pandoc
+import           Text.Pandoc.SideNote           ( usingSideNotes )
 
 main :: IO ()
 main = hakyll $ do
@@ -25,7 +26,8 @@ main = hakyll $ do
 
   match "posts/*" $ do
     route $ setExtension "html"
-    compile $ pandocCompilerWith defaultHakyllReaderOptions withToc
+    compile
+      $   pandocWithTocAndSidenotes
       >>= saveSnapshot "content"
       >>= loadAndApplyTemplate "templates/post.html"        postCtx
       >>= loadAndApplyTemplate "templates/post-layout.html" postCtx
@@ -59,11 +61,14 @@ main = hakyll $ do
         >>= loadAndApplyTemplate "templates/layout.html" indexCtx
         >>= relativizeUrls
  where
-  withToc = defaultHakyllWriterOptions
-      { writerTableOfContents = True
-      , writerTemplate        = Just "<div class='toc'><h3>Contents</h3>$toc$</div>\n$body$"
-      }
 
+pandocWithTocAndSidenotes :: Compiler (Item String)
+pandocWithTocAndSidenotes = pandocCompilerWithTransform readerOpts
+                                                        writerOpts
+                                                        usingSideNotes
+ where
+  readerOpts = defaultHakyllReaderOptions
+  writerOpts = defaultHakyllWriterOptions { writerTableOfContents = True }
 
 postCtx :: Context String
 postCtx = dateField "date" "%B %e, %Y" `mappend` defaultContext

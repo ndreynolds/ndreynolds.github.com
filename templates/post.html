@@ -1,11 +1,21 @@
-<div class="container container-narrow">
-  <div class="post-wrapper row section">
-    <h1 class="post-title">$title$</h1>
-    $if(subtitle)$
-      <h2 class="post-title">$subtitle$</h2>
-    $endif$
-    <h5 class="post-date"><em>$date$</em></h5>
-    <hr/>
-    $body$
-  </div>
-</div>
+$if(title)$
+<header>
+<h1 class="title">$title$</h1>
+$if(subtitle)$
+<p class="subtitle">$subtitle$</p>
+$endif$
+$if(date)$
+<p class="byline">$date$$if(author)$ &ndash; $author$$endif$</p>
+$else$
+$if(author)$
+<p class="byline">$author$</p>
+$endif$
+$endif$
+</header>
+$endif$
+$if(toc)$
+  <nav id="$idprefix$TOC">
+$toc$
+</nav>
+$endif$
+$body$

@@ -22,13 +22,13 @@ containers are now orchestrated with Kubernetes, but at the time we were using
 [Rancher][3].
 
 A little over a year ago, I desperately wanted to connect the Erlang
-[Observer][4] to one of our production nodes. I was debugging some background
+[Observer][4][^1] to one of our production nodes. I was debugging some background
 jobs that we'd implemented via gen_server processes, and was confused by their
 behavior in production.
 
-> In case you haven't used it, Observer is one of my favorite tools in the Erlang
-> toolbox. I don't know of any other VM that provides the same level of insight
-> into the running system. Start it with `:observer.start()` in the IEx shell.
+[^1]: In case you haven't used it, Observer is one of my favorite tools in the Erlang
+  toolbox. I don't know of any other VM that provides the same level of insight
+  into the running system. Start it with `:observer.start()` in the IEx shell.
 
 Observer is a GUI application built with wxWidgets, so while it runs on most
 platforms, you do need a desktop environment to run it. It's also possible to
@@ -69,14 +69,14 @@ locally.
 Containers unfortunately add a few more layers to this, as Docker and the
 container orchestrator both have their own networking layers complete with their
 own port mappers. For example, connecting to a container via its port requires
-mapping a host port to the container port and connecting via the host port.
+mapping a host port to the container port and connecting via the host port.[^2]
 
 I tried for quite a while to thread my connection through all the layers in our
 container running under Rancher, but I was never able to get it working with
 dynamic ports.
 
-(With Kubernetes, this is possible with the `kubectl port-forward` command.
-There's even [a nice script][6] to automate it.)
+[^2]: With Kubernetes, this is possible with the `kubectl port-forward` command.
+  There's even [a nice script][6] to automate it.
 
 ## An Erlang observer for the terminal
 
@@ -525,7 +525,7 @@ Events on objects can have complex delegation (e.g. bubbling) logic.
 >
 > local state + methods = objects
 >
-> <https://twitter.com/czaplic/status/903266544544878592>
+<https://twitter.com/czaplic/status/903266544544878592>
 
 With some inspiration from Elm Architecture, I decided to embrace the
 application loop and built a small runtime around it.

@@ -1,23 +1,57 @@
+<h1>Hi &mdash; I’m Nick Reynolds</h3>
+
+<p>
+  I’m a software developer based in Berlin.
+  <br/>
+  I specialize in crafting custom web and mobile applications.
+  I like to tinker with programming languages and am passionate
+  about making software simpler and easier to use.
+</p>
+
+<a href="mailto:ndreynolds@posteo.de">Email</a> /
+<a href="https://github.com/ndreynolds">GitHub</a> /
+<a href="https://keybase.io/ndreynolds">Keybase</a>
+
 <canvas id="life" height="250"></canvas>
 
-<div class="container">
-  <div class="header">
-    <h3 class="title">Hi &mdash; I’m Nick Reynolds</h3>
+<script>
+  (function() {
+    var canvas = document.getElementById('life')
+    canvas.setAttribute('width', document.body.clientWidth);
 
-    <p>
-      I’m a full-stack developer based in Berlin.
-      <br/>
-      I specialize in crafting custom web and mobile applications.
-      I love Ruby, the good parts of JavaScript, and recently, Haskell.
-    </p>
-    <a class="button" href="https://github.com/ndreynolds">
-      <i class="fa fa-lg fa-github"></i>
-      GitHub
-    </a>
-    </a>
-    <a class="button" href="mailto:ndreynolds@posteo.de">
-      <i class="fa fa-lg fa-envelope-o"></i>
-      Email
-    </a>
-  </div>
-</div>
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = "#fbfbfb";
+
+    var width = 250,
+        height = 100;
+    var grid = Life.initGrid(width, height);
+
+    var interval;
+
+    function updateCanvas() {
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x++) {
+          window.Life.drawCell(ctx, grid, x, y, 8);
+        }
+      }
+    }
+
+    function startInterval(intervalMs) {
+      interval = setInterval(function() {
+        grid = Life.nextGeneration(grid);
+        updateCanvas();
+      }, intervalMs);
+    }
+
+    function stopInterval(afterMs) {
+      setTimeout(function() {
+        clearInterval(interval);
+        canvas.remove();
+      }, afterMs);
+    }
+
+    updateCanvas();
+    startInterval(150);
+    stopInterval(30000);
+  }());
+</script>
