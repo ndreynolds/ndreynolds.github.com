@@ -4,7 +4,7 @@ site: Site.hs
 	stack build
 
 build: site
-	stack exec site build
+	stack exec site rebuild
 
 release: build
 	mkdir -p $(TMP_DIR)
