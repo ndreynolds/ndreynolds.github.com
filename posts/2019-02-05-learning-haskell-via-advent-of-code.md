@@ -15,9 +15,9 @@ problems this past December to improve my Haskell skills.
 
 # Advent of Code
 
-[Advent of Code][2] (AoC) is a collection of holdiay-themed programming puzzles
+[Advent of Code][2] (AoC) is a collection of holiday-themed programming puzzles
 structured as an Advent calendar---one puzzle is released each day at midnight
-from December 1st until the 25th. The puzzles are a bit remniscent of the
+from December 1st until the 25th. The puzzles are a bit reminiscent of the
 [Project Euler][3] problems, but with less math and more fun. The great thing
 about AoC is that there's something for everyone. For those who like competitive
 programming, there's a leaderboard tracking the 100 fastest users to solve each
@@ -99,7 +99,7 @@ and its derivatives for jobs that programmers in other languages would use a
 regular expression for. One sign of this (or maybe the reason) is that you'll
 find Parsec bundled with GHC, but not any regex libraries.
 
-I actually quite like regexes (short ones, anyway) and I think they can be the
+I actually quite like regexps (short ones, anyway) and I think they can be the
 right tool for a lot of jobs. For example, Day 10 required parsing position and
 velocity pairs from the following input:
 
@@ -204,7 +204,7 @@ efficiently solve Part 2. It's a little bit like this:
 * **Part 2**: Compute $factorial(n^1000)$.
 
 In other cases, my initial solution was just plain slow because I'd used the
-wrong data structures or missed a critcal bottleneck. For these cases, I used
+wrong data structures or missed a critical bottleneck. For these cases, I used
 GHC's [built-in profiling tools][13].
 
 GHC provides two particularly useful profiling options:
@@ -228,7 +228,7 @@ can be done (among other ways), via command-line arguments:
   its time?).
 * `-h` - RTS option that produces a heap profile (i.e. memory usage).
 
-My [Day 15][14] solution ([source][15]), which produced the gif at the top of
+My [Day 15][14] solution ([source][15]), which produced the GIF at the top of
 the post, was initially horribly slow.
 
 The puzzle involves creating a simulation of a battle between an army of elves
@@ -430,7 +430,7 @@ Thinking in terms of types makes it possible to start at the very top and drill
 your way down.
 
 In the Day 13 puzzle, the objective for the first part was---given a number of
-carts hurtling down the tracks, eventuallly right at one another---to find the
+carts hurtling down the tracks, eventually right at one another---to find the
 first cart crash. A simple network of tracks looks like this:
 
 ```

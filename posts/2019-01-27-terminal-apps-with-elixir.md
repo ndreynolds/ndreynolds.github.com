@@ -180,7 +180,7 @@ This minimal API is certainly much lighter than the ncurses API. On my machine,
 `termbox.h` is only 320 lines, while `ncurses.h` is 2094 lines. While that also
 means it's missing some features, I figured a minimal API would be easier to
 build on top of, as I didn't want to spend so much time working in C, and was
-more interested in building abstrations in Elixir.
+more interested in building abstractions in Elixir.
 
 So the next step was figuring out how to use it from Elixir. To do that, I
 created a library called [ex_termbox][12] that provides bindings to the termbox
@@ -455,7 +455,7 @@ sorts of operations.
 
 The same applies to the application loop. Rendering doesn't just need to be
 pure, it has to be really fast. Similarly, handling an event also needs to be
-really fast so that the user can be given some kind of acknowledgement
+really fast so that the user can be given some kind of acknowledgment
 ASAP---even if it's just a loading spinner.
 
 For toby, which I someday hope to use in production, this is especially
@@ -490,7 +490,7 @@ When the cache is expired or there's no cache entry, requests are looked up with
 fast enough to load everything within the scope of the `GenServer.call/3` to the
 `Data.Server` process (most calls take microseconds), but in other apps this
 approach could be adapted to keep the cache warm or to request data
-asynchonously.
+asynchronously.
 
 To display charts and other historical views, the server also maintains a
 circular buffer of system "samples" from `Data.Sampler`. Because sampling is
@@ -500,7 +500,7 @@ done by the `Data.Server`
 
 If render functions are pure, everything that we want to render has to live in
 the application loop's state. For toby, that meant that the individual state for
-each tab had to be stored altogether in a big map. Without introucing new loops,
+each tab had to be stored altogether in a big map. Without introducing new loops,
 there's no real way around this.
 
 Bundling everything together in one big loop has its pros and cons. One big map
