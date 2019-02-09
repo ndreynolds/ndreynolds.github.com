@@ -2,9 +2,9 @@
 title: "Learning Haskell via Advent of Code"
 ---
 
-![](/images/aoc.gif)[^mn]
+![](/images/aoc.gif)[^caption1]
 
-[^mn]:
+[^caption1]:
   {-} My Goblins and Elves do battle in Day 15
 
 Inspired by [this post][1] from Forest Smith on his experience learning Rust
@@ -40,12 +40,11 @@ beginners.
 
 All of my solutions can be found in [my repository][4] on GitHub. Towards the
 end, my holiday travels got in the way, so I only managed 18 of the 25 puzzles,
-but I'm still quite proud of that.[^1]
+but I'm still quite proud of that.[^racket]
 
-
-[^1]: At first, I was so motivated that I wanted to do them all in [Racket][5],
-too, but that proved a bit too ambitious. I think I'll try Racket again next
-year.
+[^racket]: At first, I was so motivated that I wanted to do them all in
+[Racket][5], too, but that proved a bit too ambitious. I think I'll try Racket
+next year.
 
 ## Structuring Solutions
 
@@ -235,15 +234,19 @@ the post, was initially horribly slow.
 The puzzle involves creating a simulation of a battle between an army of elves
 and an army of goblins in true dungeon crawler style. Each unit on the map has a
 sort of deterministic AI. Units each have turns in a pre-defined series, and
-each turn they can either attack an enemy in range or move one square towards
+each turn they can either attack an enemy in range, or move one square towards
 the nearest enemy. Finding the nearest enemy is definitely the tough part.
 
 Units cannot move through walls (they're fighting in a cave) and they cannot
 move through each other---so the simulation requires finding, for each unit, the
-shortest path to an enemy. (In the event of multiple shortest paths, the
-directions also define a way to break the tie.) This means calculating the paths
-in each round is $O(n^2)$, as we have to calculate the paths between all units
-in order to find the shortest ones.
+shortest path to an enemy.[^paths]
+
+[^paths]:
+  In the event of multiple shortest paths to an enemy, the directions specify
+  that the next enemy in reading order (i.e., left-to-right, then top-to-bottom)
+  is chosen. This all means calculating the paths in each round is $O(n^2)$, as
+  we have to calculate the paths between all units in order to find the shortest
+  ones.
 
 From the puzzle directions:
 
@@ -310,6 +313,252 @@ The only red flag is the `60.23 sec` it takes to run! I expected some overhead,
 but not quite so much. Compiling again without the profiling options and with
 `-O2` brings the total runtime down to a few seconds.
 
+## Pattern Matching
+
+I learned from Elixir & Erlang how powerful pattern matching can be. Luckily
+Haskell gets us most[^erlvhask] of the way there and with types to boot.
+
+[^erlvhask]:
+  One of the things I seem to miss the most is being able to match for equality of
+  two values by using the same variable twice.  For example, in Erlang the match
+  expression `{x, x} = {0, 0}` succeeds, whereas `{x, x} = {0, 1}` does not
+  (match error). In Haskell, given a similar `(x, x) = (0, 0)`, the compiler
+  complains about multiple declarations of `x`.
+
+In the puzzles, I often found it lovely to just transliterate the mapping in the
+puzzle directions to one in Haskell.
+
+For example, Day 12 called for building a kind of single-row [cellular
+automaton][18][^gameoflife] from an initial state with rules for whether each
+cell is occupied (alive) or unoccupied (dead) in the next generation:
+
+[^gameoflife]: For example, Conway's Game of Life is a cellular automaton with a similarly defined
+    rule-set.
+
+```
+initial state: #..#.#..##......###...###
+
+...## => #
+..#.. => #
+.#... => #
+.#.#. => #
+.#.## => #
+.##.. => #
+.#### => #
+#.#.# => #
+#.### => #
+##.#. => #
+##.## => #
+###.. => #
+###.# => #
+####. => #
+```
+
+The above rules only cover the "alive" cases; anything else is assumed dead in
+the next round. I was pretty happy with how this converted to Haskell, where I
+defined a function to advance a block of cells to the next generation based on
+the rules above:
+
+```haskell
+transform :: String -> String
+transform ('#' : '#' : '#' : '#' : ".") = "####."
+transform ('#' : '#' : '.' : '#' : ".") = "####."
+transform ('#' : '#' : '.' : '.' : ".") = "###.."
+transform ('#' : '.' : '#' : '#' : "#") = "#.###"
+transform ('#' : '.' : '.' : '#' : ".") = "#.##."
+transform ('.' : '#' : '#' : '#' : "#") = ".####"
+transform ('.' : '#' : '#' : '.' : "#") = ".##.#"
+transform ('.' : '#' : '.' : '.' : "#") = ".##.#"
+transform ('.' : '#' : '.' : '.' : ".") = ".##.."
+transform ('.' : '.' : '#' : '#' : "#") = "..###"
+transform ('.' : '.' : '#' : '.' : "#") = "..#.#"
+transform ('.' : '.' : '.' : '#' : "#") = "..###"
+transform (l2  : l1  :  _  : r1  : r2 ) = l2 : l1 : '.' : r1 : r2
+```
+
+## Algebraic Data Types
+
+Algebraic data types are wonderfully expressive for certain problems. I sorely
+miss them when working in dynamic languages.
+
+For example, on Day 13, which involved building an ASCII rail network, I used
+the ADTs to capture all the possible states my tracks could be in:
+
+```haskell
+data Track = Track TrackType TrackState
+           deriving (Show, Eq)
+
+-- | Tracks can point in different directions or be intersections
+data TrackType = TVertical     -- |
+               | THorizontal   -- -
+               | TDiagonalUp   -- /
+               | TDiagonalDown -- \
+               | TIntersection -- +
+               deriving (Show, Eq)
+
+-- | Tracks can either be clear or occupied by a cart or crash
+data TrackState = SCart CartDirection IntersectionRule
+                | SCrash
+                | SClear
+                deriving (Show, Eq)
+
+-- | Carts can move in four directions
+data CartDirection = DUp
+                   | DDown
+                   | DLeft
+                   | DRight
+                   deriving (Show, Eq)
+
+-- | Carts cycle through rules for which way to turn at an intersection
+data IntersectionRule = RLeft
+                      | RStraight
+                      | RRight
+                      deriving (Show, Eq)
+
+type Coord = (Integer, Integer)
+
+type TrackNetwork = Map Coord Track
+```
+
+It was then very helpful to have the compiler's help in making sure I'd handled
+all the possible values of union types---for example, every track type above in
+the logic to move a cart.
+
+I think even more beneficial than type checking was how designing the types for
+each problem helped me to plan the solution before writing any real code.
+Thinking in terms of types makes it possible to start at the very top and drill
+your way down.
+
+In the Day 13 puzzle, the objective for the first part was---given a number of
+carts hurtling down the tracks, eventuallly right at one another---to find the
+first cart crash. A simple network of tracks looks like this:
+
+```
+   x axis ->
+
+y  /->-\
+|  |   |  /----\
+v  | /-+--+-\  |
+   | | |  | v  |
+   \-+-/  \-+--/
+     \------/
+```
+
+So I started there with the assumption that I'd need a type for the entire
+network of tracks, and a type for the coordinate pair where the crash occurs:
+
+```haskell
+firstCrash :: TrackNetwork -> Coord
+```
+
+This then led to the definition of the track network as a map of coordinates to
+tracks:
+
+```haskell
+type TrackNetwork = Map Coord Track
+```
+
+Then I compiled all the information about tracks from the description into the
+track type. In order to package everything up together---the track direction and
+whatever's on top of it---I decided to also store the carts with the tracks
+themselves:
+
+```haskell
+data Track = Track TrackType TrackState
+
+-- | Tracks can point in different directions or be intersections
+data TrackType = TVertical     -- |
+               | THorizontal   -- -
+               | TDiagonalUp   -- /
+               | TDiagonalDown -- \
+               | TIntersection -- +
+
+-- | Tracks can either be clear or occupied by a cart or crash
+data TrackState = SCart CartDirection IntersectionRule
+                | SCrash
+                | SClear
+```
+
+From here, I continued with carts, which travel in a particular direction and
+the cycling intersection rule that tells the carts which way to turn.
+
+```haskell
+-- | Carts can move in four directions
+data CartDirection = DUp
+                   | DDown
+                   | DLeft
+                   | DRight
+
+-- | Carts cycle through rules for which way to turn at an intersection
+data IntersectionRule = RLeft
+                      | RStraight
+                      | RRight
+```
+
+By starting with the types, I had a solid foundation to write the logic to parse
+the tracks and simulate the cart travel. This is something I'm definitely
+starting to miss in dynamic languages. There I can still plan the structure of
+nested data structures, but I can't encode the rules into its definition in
+quite the same way.
+
+## Plotting Data with Gnuplot
+
+For a few different puzzles, I found it useful to plot data generated by the
+program in order to visualize it.
+
+There are a number of different Haskell libraries for creating charts that rely
+on different backends. For example, the [Chart][19] library is backed by Cairo
+and provides a number of different chart types and export formats.
+
+After looking around, I settled on [easyplot][20], which wraps the
+[`gnuplot`][21] command line utility. The package can generate `.dat` files with
+the plot data in the Gnuplot-supported format and can run the X11. For example,
+the following plots two points:
+
+```haskell
+> plot X11 $ Data2D [Title "Sample Data"] [] [(0, 1), (5, 2)]
+```
+
+It's also possible to pass functions:
+
+```haskell
+> plot X11 sin
+```
+
+Plots can also be rendered to PNG instead by swapping `X11` for `(PNG "sin.png")`:
+
+![](/images/sin.png)
+
+Gnuplot is ancient, so it doesn't produce the prettiest charts, but I found it
+and its Haskell wrapper lovely for their simplicity. Without passing any
+options, they already produce something reasonable. This is great for trying to
+make sense of data without getting bogged down in the the details.
+
+With the `.dat` file generated by the Haskell wrapper, `gnuplot` can also be ran
+directly, which allows for configuring plotting on the command line, e.g.:
+
+```bash
+$ gnuplot -e 'set term x11 persist; set size 0.5,0.15; plot "plot1.dat"'
+```
+
+Other programs can also render Gnuplot `.dat` files, so there's a lot you can do
+with the data once it's out of your Haskell program.
+
+I used this strategy for Day 10, which involved finding a message formed by
+shooting stars as they align for a split second. I didn't really know what to
+expect---I wasn't sure if all the stars would cluster together or only some of
+them, so I decided to plot the coordinates when alignment reached a certain
+threshold and take a look. It worked pretty well:
+
+![](/images/stars.png)[^stars]
+
+[^stars]:
+  {-} In case you're wondering, as I did for a long while, the message is upside
+  down.
+
+Here I used the `gnuplot` command above to squeeze the y-axis to make the
+letters readable.
+
 ## Formatting Code
 
 While it has nothing to do with puzzles, automatic code formatting has become an
@@ -322,7 +571,7 @@ code to make it "pretty" was my job, but now I've realized that's a big waste of
 Haskell doesn't yet and may never have a canonical formatter included with GHC,
 but there are some different packages to fill this need.
 
-I used [brittany][18] to format my solutions and was impressed with the results.
+I used [brittany][22] to format my solutions and was impressed with the results.
 I didn't always agree with it's choices, but I think that's the trade-off when
 using a formatter.
 
@@ -343,4 +592,9 @@ using a formatter.
 [15]: https://github.com/ndreynolds/advent-of-code/blob/master/2018/haskell/Day15.hs
 [16]: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 [17]: http://hackage.haskell.org/package/PSQueue
-[18]: https://github.com/lspitzner/brittany
+[18]: https://en.wikipedia.org/wiki/Cellular_automaton
+[19]: http://hackage.haskell.org/package/Chart
+[20]: http://hackage.haskell.org/package/easyplot-1.0/docs/Graphics-EasyPlot.html
+[21]: http://www.gnuplot.info/
+[22]: https://github.com/lspitzner/brittany
+
