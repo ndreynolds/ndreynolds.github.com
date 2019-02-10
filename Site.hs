@@ -15,13 +15,6 @@ main = hakyll $ do
     route idRoute
     compile compressCssCompiler
 
-  match (fromList ["about.rst", "contact.markdown"]) $ do
-    route $ setExtension "html"
-    compile
-      $   pandocCompiler
-      >>= loadAndApplyTemplate "templates/layout.html" defaultContext
-      >>= relativizeUrls
-
   match "templates/*" $ compile templateCompiler
 
   match "posts/*" $ do
@@ -46,6 +39,22 @@ main = hakyll $ do
         >>= loadAndApplyTemplate "templates/archive.html"     archiveCtx
         >>= loadAndApplyTemplate "templates/post-layout.html" archiveCtx
         >>= relativizeUrls
+
+  create ["atom.xml"] $ do
+    route idRoute
+    compile $ do
+        let feedCtx = postCtx `mappend` bodyField "description"
+        posts <- fmap (take 10) . recentFirst =<<
+            loadAllSnapshots "posts/*" "content"
+        renderAtom feedConfiguration feedCtx posts
+
+  create ["rss.xml"] $ do
+    route idRoute
+    compile $ do
+        let feedCtx = postCtx `mappend` bodyField "description"
+        posts <- fmap (take 10) . recentFirst =<<
+            loadAllSnapshots "posts/*" "content"
+        renderRss feedConfiguration feedCtx posts
 
   match "index.html" $ do
     route idRoute
@@ -75,3 +84,12 @@ postCtx = dateField "date" "%B %e, %Y" `mappend` defaultContext
 
 teaserCtx :: Context String
 teaserCtx = teaserField "teaser" "content" `mappend` postCtx
+
+feedConfiguration :: FeedConfiguration
+feedConfiguration = FeedConfiguration
+    { feedTitle       = "ndreynolds.com"
+    , feedDescription = "Writings and musings about software development"
+    , feedAuthorName  = "Nick Reynolds"
+    , feedAuthorEmail = "ndreynolds@posteo.de"
+    , feedRoot        = "https://ndreynolds.com"
+    }
