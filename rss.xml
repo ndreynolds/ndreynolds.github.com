@@ -1,0 +1,1194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>ndreynolds.com</title>
+        <link>https://ndreynolds.com</link>
+        <description><![CDATA[Writings and musings about software development]]></description>
+        <atom:link href="https://ndreynolds.com/rss.xml" rel="self"
+                   type="application/rss+xml" />
+        <lastBuildDate>Tue, 05 Feb 2019 00:00:00 UT</lastBuildDate>
+        <item>
+    <title>Learning Haskell via Advent of Code</title>
+    <link>https://ndreynolds.com/posts/2019-02-05-learning-haskell-via-advent-of-code.html</link>
+    <description><![CDATA[<p><img src="/images/aoc.gif" /><span><label for="sn-1" class="margin-toggle">&#8853;</label><input type="checkbox" id="sn-1" class="margin-toggle"/><span class="marginnote"> My Goblins and Elves do battle in Day 15<br />
+<br />
+</span></span></p>
+<p>Inspired by <a href="https://www.forrestthewoods.com/blog/learning-rust-via-advent-of-code/">this post</a> from Forest Smith on his experience learning Rust with Advent of Code, I wanted to share my own experience working through the problems this past December to improve my Haskell skills.</p>
+<!--more-->
+<h1 id="advent-of-code">Advent of Code</h1>
+<p><a href="https://adventofcode.com/">Advent of Code</a> (AoC) is a collection of holiday-themed programming puzzles structured as an Advent calendar—one puzzle is released each day at midnight from December 1st until the 25th. The puzzles are a bit reminiscent of the <a href="https://projecteuler.net/">Project Euler</a> problems, but with less math and more fun. The great thing about AoC is that there’s something for everyone. For those who like competitive programming, there’s a leaderboard tracking the 100 fastest users to solve each day’s puzzle. Others don’t compete, but just enjoy solving the puzzles or use them to learn something new.</p>
+<p>I decided to use the puzzles as an opportunity to learn some more Haskell. Haskell and I have had an off-and-on relationship the last several years. The first time I tried it (in 2014), my mind was blown by functional programming, pattern matching, type theory, and particularly Cabal “dependency hell”—the circle of hell that Dante must have forgotten about. Even back then, a part of me really liked Haskell, but I was just in over my head.</p>
+<p>Since then, Elixir has been my gateway drug into real world FP, and I can feel a lot of Haskell concepts starting to really click in my mind. Also, improvements to Cabal and new tools like Stack have made the experience smoother for Haskell beginners.</p>
+<h1 id="my-experience-with-haskell">My Experience with Haskell</h1>
+<p>All of my solutions can be found in <a href="https://github.com/ndreynolds/advent-of-code">my repository</a> on GitHub. Towards the end, my holiday travels got in the way, so I only managed 18 of the 25 puzzles, but I’m still quite proud of that.<span><label for="sn-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-2" class="margin-toggle"/><span class="sidenote">At first, I was so motivated that I wanted to do them all in <a href="https://racket-lang.org/">Racket</a>, too, but that proved a bit too ambitious. I think I’ll try Racket next year.<br />
+<br />
+</span></span></p>
+<h2 id="structuring-solutions">Structuring Solutions</h2>
+<p>I spend so much time fiddling with build tools and manifests at work that I find it really satisfying to just pass a program directly to the compiler.</p>
+<p>I decided to write each day’s solution (usually two parts) as a single <code>DayN.hs</code> file that I’d run with <code>runhaskell</code> or compile with <code>ghc</code>. I generally stuck to what’s included in the GHC distribution (mostly <a href="http://hackage.haskell.org/package/base"><code>base</code></a> and <a href="http://hackage.haskell.org/package/containers"><code>containers</code></a>) so that the programs were free of additional dependencies. (I made a few exceptions that I’ll mention later.)</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1">$ <span class="ex">runhaskell</span> Day01.hs</a></code></pre></div>
+<h2 id="working-with-io">Working with I/O</h2>
+<p>The AoC puzzles have a personalized input file that you need to download and run against your program. In addition to the input file, there is usually a simplified example to check the results of your algorithm against. It’s a good fit for the Unix philosophy of having programs exchange data via the standard streams, as I could just redirect different files to the program’s stdin, as well as use pipes for some light preprocessing. So most of the programs are run like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1">$ <span class="ex">./Day25</span> <span class="op">&lt;</span> 25.txt</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="ex">420</span></a></code></pre></div>
+<p>Haskell’s Prelude provides a very elegant abstraction around the processing of standard IO streams: <code>interact :: (String -&gt; String) -&gt; IO ()</code> (<a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Prelude.html#v:interact">docs</a>). You just provide a function that accepts stdin as a <code>String</code> and returns another <code>String</code> to be written to stdout, and it handles the rest. I used variations of this pattern in most solutions:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-2" title="2">main <span class="fu">=</span> <span class="fu">interact</span> (<span class="fu">show</span> <span class="fu">.</span> solve <span class="fu">.</span> parse)</a></code></pre></div>
+<h2 id="parsing-input-to-regex-or-not-to-regex">Parsing Input: To regex or not to regex</h2>
+<p>The different puzzles called for different approaches to parsing input. Some of the inputs were simple enough that <code>lines</code> and a little transformation did the job, whereas others called for a regular expression or a real parser. (Sometimes the parsing was even the biggest challenge.)</p>
+<p>Many in the Haskell community tend to prefer parser combinators like <a href="https://downloads.haskell.org/~ghc/latest/docs/html/libraries/parsec-3.1.13.0/Text-Parsec.html">Parsec</a> and its derivatives for jobs that programmers in other languages would use a regular expression for. One sign of this (or maybe the reason) is that you’ll find Parsec bundled with GHC, but not any regex libraries.</p>
+<p>I actually quite like regexps (short ones, anyway) and I think they can be the right tool for a lot of jobs. For example, Day 10 required parsing position and velocity pairs from the following input:</p>
+<pre><code>position=&lt;-50310,  10306&gt; velocity=&lt; 5, -1&gt;
+position=&lt;-20029,  -9902&gt; velocity=&lt; 2,  1&gt;
+position=&lt; 10277, -30099&gt; velocity=&lt;-1,  3&gt;</code></pre>
+<p>Regular expressions are particularly handy for extracting numbers from text with a lot of extraneous information and whitespace you don’t care about.</p>
+<p>So I figured out how to use them in Haskell, which is a bit of <a href="https://gabebw.com/blog/2015/10/11/regular-expressions-in-haskell">a challenge itself</a>. I actually went in a different direction than the linked post and used <a href="http://hackage.haskell.org/package/regex-tdfa"><code>Text.Regex.TDFA</code></a>, which is a new, pure Haskell regex engine.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1">positionRe <span class="fu">=</span> <span class="st">&quot;position=&lt;[[:space:]]*(-?[0-9]+),[[:space:]]*(-?[0-9]+)&gt;&quot;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">(_, _, _, captures) <span class="fu">=</span> str <span class="fu">=~</span> positionRe</a></code></pre></div>
+<p>In other cases, using parser combinators really was the right approach. For example, in Day 4, my task was to sneak into Santa’s prototype suit manufacturing lab, which involved parsing the “event log” of different elf guards as they’d start their shifts, fall asleep, wake up, and so on:</p>
+<pre><code>[1518-11-20 23:58] Guard #1229 begins shift
+[1518-11-21 00:51] falls asleep
+[1518-11-21 00:53] wakes up
+[1518-11-21 00:57] falls asleep
+[1518-11-21 00:59] wakes up
+[1518-11-22 00:00] Guard #2441 begins shift
+[1518-11-22 00:12] falls asleep
+[1518-11-22 00:13] wakes up
+[1518-11-22 00:17] falls asleep
+[1518-11-22 00:46] wakes up
+[1518-11-22 00:52] falls asleep
+[1518-11-22 00:54] wakes up</code></pre>
+<p>I’m not saying you couldn’t solve this with a regex, but the fact that each guard can take an arbitrary number of naps would make it very ugly. So I went with <a href="http://hackage.haskell.org/package/megaparsec">Megaparsec</a>, which I’d already used in another project. It’s more or less the same API as Parsec, but includes some fixes and enhancements that make it a bit nicer to work with. So far it’s been a real pleasure to use.</p>
+<p>To parse the event log, I cobbled together the following:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">data</span> <span class="dt">Shift</span> <span class="fu">=</span> <span class="dt">Shift</span> <span class="dt">Integer</span> [<span class="dt">ShiftEvent</span>] <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb7-2" title="2"></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="kw">data</span> <span class="dt">ShiftEvent</span> <span class="fu">=</span> <span class="dt">Asleep</span> <span class="dt">Minutes</span></a>
+<a class="sourceLine" id="cb7-4" title="4">                <span class="fu">|</span> <span class="dt">Awake</span> <span class="dt">Minutes</span></a>
+<a class="sourceLine" id="cb7-5" title="5">                <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb7-6" title="6"></a>
+<a class="sourceLine" id="cb7-7" title="7"><span class="kw">type</span> <span class="dt">Minutes</span> <span class="fu">=</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9"><span class="kw">type</span> <span class="dt">Parser</span> <span class="fu">=</span> <span class="dt">Parsec</span> <span class="dt">Void</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb7-10" title="10"></a>
+<a class="sourceLine" id="cb7-11" title="11"><span class="ot">minutes ::</span> <span class="dt">Parser</span> <span class="dt">Minutes</span></a>
+<a class="sourceLine" id="cb7-12" title="12">minutes <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-13" title="13">  char <span class="ch">&#39;[&#39;</span></a>
+<a class="sourceLine" id="cb7-14" title="14">  skipSomeTill (digitChar <span class="fu">&lt;|&gt;</span> char <span class="ch">&#39;-&#39;</span> <span class="fu">&lt;|&gt;</span> spaceChar) (char <span class="ch">&#39;:&#39;</span>)</a>
+<a class="sourceLine" id="cb7-15" title="15">  <span class="fu">min</span> <span class="ot">&lt;-</span> count <span class="dv">2</span> digitChar</a>
+<a class="sourceLine" id="cb7-16" title="16">  char <span class="ch">&#39;]&#39;</span></a>
+<a class="sourceLine" id="cb7-17" title="17">  <span class="fu">return</span> <span class="fu">$</span> <span class="fu">read</span> <span class="fu">min</span></a>
+<a class="sourceLine" id="cb7-18" title="18"></a>
+<a class="sourceLine" id="cb7-19" title="19"><span class="ot">slumber ::</span> <span class="dt">Parser</span> [<span class="dt">ShiftEvent</span>]</a>
+<a class="sourceLine" id="cb7-20" title="20">slumber <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-21" title="21">  asleepAt <span class="ot">&lt;-</span> minutes</a>
+<a class="sourceLine" id="cb7-22" title="22">  string <span class="st">&quot; falls asleep\n&quot;</span></a>
+<a class="sourceLine" id="cb7-23" title="23">  awakeAt <span class="ot">&lt;-</span> minutes</a>
+<a class="sourceLine" id="cb7-24" title="24">  string <span class="st">&quot; wakes up\n&quot;</span></a>
+<a class="sourceLine" id="cb7-25" title="25">  <span class="fu">return</span> <span class="fu">$</span> [<span class="dt">Asleep</span> asleepAt, <span class="dt">Awake</span> awakeAt]</a>
+<a class="sourceLine" id="cb7-26" title="26"></a>
+<a class="sourceLine" id="cb7-27" title="27"><span class="ot">shift ::</span> <span class="dt">Parser</span> <span class="dt">Shift</span></a>
+<a class="sourceLine" id="cb7-28" title="28">shift <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-29" title="29">  _start <span class="ot">&lt;-</span> minutes</a>
+<a class="sourceLine" id="cb7-30" title="30">  string <span class="st">&quot; Guard #&quot;</span></a>
+<a class="sourceLine" id="cb7-31" title="31">  guardId <span class="ot">&lt;-</span> some digitChar</a>
+<a class="sourceLine" id="cb7-32" title="32">  string <span class="st">&quot; begins shift\n&quot;</span></a>
+<a class="sourceLine" id="cb7-33" title="33">  events <span class="ot">&lt;-</span> many (try slumber)</a>
+<a class="sourceLine" id="cb7-34" title="34">  <span class="fu">return</span> <span class="fu">$</span> <span class="dt">Shift</span> (<span class="fu">read</span> guardId) (<span class="fu">concat</span> events)</a>
+<a class="sourceLine" id="cb7-35" title="35"></a>
+<a class="sourceLine" id="cb7-36" title="36"><span class="ot">shifts ::</span> <span class="dt">Parser</span> [<span class="dt">Shift</span>]</a>
+<a class="sourceLine" id="cb7-37" title="37">shifts <span class="fu">=</span> many shift</a></code></pre></div>
+<p>While the whitespace handling is a bit sloppy here, it has some nice properties. It’s not possible to parse an <code>Awake</code> event followed by another <code>Awake</code> event. Parser combinators make it very easy to express a particular order that must be followed.</p>
+<h2 id="profiling-slow-code">Profiling Slow Code</h2>
+<p>Most of the puzzles have two parts. It’s common to be able to brute force the solution to Part 1, but to need to step back and think about how to more efficiently solve Part 2. It’s a little bit like this:</p>
+<ul>
+<li><strong>Part 1</strong>: Compute <span class="math inline"><em>f</em><em>a</em><em>c</em><em>t</em><em>o</em><em>r</em><em>i</em><em>a</em><em>l</em>(<em>n</em>)</span>.</li>
+<li><strong>Part 2</strong>: Compute <span class="math inline"><em>f</em><em>a</em><em>c</em><em>t</em><em>o</em><em>r</em><em>i</em><em>a</em><em>l</em>(<em>n</em><sup>1000</sup>)</span>.</li>
+</ul>
+<p>In other cases, my initial solution was just plain slow because I’d used the wrong data structures or missed a critical bottleneck. For these cases, I used GHC’s <a href="https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/profiling.html">built-in profiling tools</a>.</p>
+<p>GHC provides two particularly useful profiling options:</p>
+<ul>
+<li><code>-prof</code> - Compiles for cost-center profiling. This means profiling is turned on, but adding this alone doesn’t define any cost centers. Cost centers are just program annotations that flag a particular expression for profiling. They can be added manually with <code>{-# SCC myId #-}</code>.</li>
+<li><code>-fprof-auto</code> - This option automatically gives all bindings SCC annotations (with the exception of those referenced by an <code>INLINE</code> pragma), so you don’t need to add any manually.</li>
+</ul>
+<p>At this point, we can compile a program for profiling, but we still need to tell the runtime system (RTS) to generate the profile when the program is ran. This can be done (among other ways), via command-line arguments:</p>
+<ul>
+<li><code>+RTS</code> - Demarcates the beginning of the RTS options (which are removed from the argv given to your program). Ended with <code>-RTS</code> or automatically when the end of arguments is reached.</li>
+<li><code>-p</code> - RTS option that produces a time profile (i.e. where is the program spending its time?).</li>
+<li><code>-h</code> - RTS option that produces a heap profile (i.e. memory usage).</li>
+</ul>
+<p>My <a href="https://adventofcode.com/2018/day/15">Day 15</a> solution (<a href="https://github.com/ndreynolds/advent-of-code/blob/master/2018/haskell/Day15.hs">source</a>), which produced the GIF at the top of the post, was initially horribly slow.</p>
+<p>The puzzle involves creating a simulation of a battle between an army of elves and an army of goblins in true dungeon crawler style. Each unit on the map has a sort of deterministic AI. Units each have turns in a pre-defined series, and each turn they can either attack an enemy in range, or move one square towards the nearest enemy. Finding the nearest enemy is definitely the tough part.</p>
+<p>Units cannot move through walls (they’re fighting in a cave) and they cannot move through each other—so the simulation requires finding, for each unit, the shortest path to an enemy.<span><label for="sn-3" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-3" class="margin-toggle"/><span class="sidenote">In the event of multiple shortest paths to an enemy, the directions specify that the next enemy in reading order (i.e., left-to-right, then top-to-bottom) is chosen. This all means calculating the paths in each round is <span class="math inline"><em>O</em>(<em>n</em><sup>2</sup>)</span>, as we have to calculate the paths between all units in order to find the shortest ones.<br />
+<br />
+</span></span></p>
+<p>From the puzzle directions:</p>
+<pre><code>Targets:      In range:     Reachable:    Nearest:      Chosen:
+#######       #######       #######       #######       #######
+#E..G.#       #E.?G?#       #E.@G.#       #E.!G.#       #E.+G.#
+#...#.#  --&gt;  #.?.#?#  --&gt;  #.@.#.#  --&gt;  #.!.#.#  --&gt;  #...#.#
+#.G.#G#       #?G?#G#       #@G@#G#       #!G.#G#       #.G.#G#
+#######       #######       #######       #######       #######</code></pre>
+<p>In order to find the shortest paths, I used <a href="https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm">Dijkstra’s algorithm</a>. My implementation was correct on small sample inputs, but was too slow to run on my real input. I knew something was wrong, so I used the profiler to see what my program was up to:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1">$ <span class="ex">ghc</span> -prof -fprof-auto Day15.hs</a>
+<a class="sourceLine" id="cb9-2" title="2">$ <span class="ex">./Day15</span> +RTS -p <span class="op">&lt;</span> 15.txt</a></code></pre></div>
+<p>Running the second line generates a <code>Day15.prof</code> file in the current directory.</p>
+<p>By inspecting the report, I found the problem. Dijkstra’s algorithm works by keeping a set of unvisited neighbor nodes and visiting these in order by shortest distance. I had actually used <code>Data.Set</code> to store these unvisited neighbors and was using <code>minimumBy</code> to find the next one to visit. Unsurprisingly, this was a very hot code path, and my program was spending 99% of its time there.</p>
+<p>A priority queue makes this operation efficient. Elements of the queue are ranked by their priority—here, by their distance. I used the <a href="http://hackage.haskell.org/package/PSQueue"><code>Data.PSQueue</code></a> implementation, which supports <span class="math inline"><em>O</em>(1)</span> retrieval of the element with the lowest priority, as well as <span class="math inline"><em>O</em>(log <em>n</em>)</span> insertion, deletion and update operations.</p>
+<p>My program now produces the following time profile, which is quite reasonable:</p>
+<pre><code>	Tue Feb  5 20:35 2019 Time and Allocation Profiling Report  (Final)
+
+	   Day15 +RTS -p -hc -RTS
+
+	total time  =       60.23 secs   (60231 ticks @ 1000 us, 1 processor)
+	total alloc = 75,047,638,704 bytes  (excludes profiling overheads)
+
+COST CENTRE              MODULE       SRC                               %time %alloc
+
+lookup                   Data.PSQueue Data/PSQueue.hs:(117,1)-(125,37)   33.4   35.4
+open                     Main         Day15.hs:127:1-55                  20.3    1.6
+insert                   Data.PSQueue Data/PSQueue.hs:(139,1)-(149,49)   12.9   21.0
+adjustWithKey            Data.PSQueue Data/PSQueue.hs:(190,1)-(198,62)   12.1   13.0
+deleteMin                Data.PSQueue Data/PSQueue.hs:(317,1)-(318,43)    6.2    7.8
+dijkstra.update          Main         Day15.hs:(115,3)-(121,31)           6.1    5.9
+dijkstra.prune           Main         Day15.hs:(108,3)-(113,33)           1.6    4.2
+adjacents                Main         Day15.hs:139:1-67                   1.3    2.2
+dijkstra.prune.neighbors Main         Day15.hs:112:5-78                   1.1    2.2
+openAdjacents            Main         Day15.hs:142:1-61                   1.1    2.0
+dijkstra.initQ           Main         Day15.hs:(99,3)-(100,78)            0.5    1.8</code></pre>
+<p>The only red flag is the <code>60.23 sec</code> it takes to run! I expected some overhead, but not quite so much. Compiling again without the profiling options and with <code>-O2</code> brings the total runtime down to a few seconds.</p>
+<h2 id="pattern-matching">Pattern Matching</h2>
+<p>I learned from Elixir &amp; Erlang how powerful pattern matching can be. Luckily Haskell gets us most<span><label for="sn-4" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-4" class="margin-toggle"/><span class="sidenote">One of the things I seem to miss the most is being able to match for equality of two values by using the same variable twice. For example, in Erlang the match expression <code>{x, x} = {0, 0}</code> succeeds, whereas <code>{x, x} = {0, 1}</code> does not (match error). In Haskell, given a similar <code>(x, x) = (0, 0)</code>, the compiler complains about multiple declarations of <code>x</code>.<br />
+<br />
+</span></span> of the way there and with types to boot.</p>
+<p>In the puzzles, I often found it lovely to just transliterate the mapping in the puzzle directions to one in Haskell.</p>
+<p>For example, Day 12 called for building a kind of single-row <a href="https://en.wikipedia.org/wiki/Cellular_automaton">cellular automaton</a><span><label for="sn-5" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-5" class="margin-toggle"/><span class="sidenote">For example, Conway’s Game of Life is a cellular automaton with a similarly defined rule-set.<br />
+<br />
+</span></span> from an initial state with rules for whether each cell is occupied (alive) or unoccupied (dead) in the next generation:</p>
+<pre><code>initial state: #..#.#..##......###...###
+
+...## =&gt; #
+..#.. =&gt; #
+.#... =&gt; #
+.#.#. =&gt; #
+.#.## =&gt; #
+.##.. =&gt; #
+.#### =&gt; #
+#.#.# =&gt; #
+#.### =&gt; #
+##.#. =&gt; #
+##.## =&gt; #
+###.. =&gt; #
+###.# =&gt; #
+####. =&gt; #</code></pre>
+<p>The above rules only cover the “alive” cases; anything else is assumed dead in the next round. I was pretty happy with how this converted to Haskell, where I defined a function to advance a block of cells to the next generation based on the rules above:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="ot">transform ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb12-2" title="2">transform (<span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;####.&quot;</span></a>
+<a class="sourceLine" id="cb12-3" title="3">transform (<span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;####.&quot;</span></a>
+<a class="sourceLine" id="cb12-4" title="4">transform (<span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;###..&quot;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">transform (<span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;#.###&quot;</span></a>
+<a class="sourceLine" id="cb12-6" title="6">transform (<span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;#.##.&quot;</span></a>
+<a class="sourceLine" id="cb12-7" title="7">transform (<span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;.####&quot;</span></a>
+<a class="sourceLine" id="cb12-8" title="8">transform (<span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;.##.#&quot;</span></a>
+<a class="sourceLine" id="cb12-9" title="9">transform (<span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;.##.#&quot;</span></a>
+<a class="sourceLine" id="cb12-10" title="10">transform (<span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;.##..&quot;</span></a>
+<a class="sourceLine" id="cb12-11" title="11">transform (<span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;..###&quot;</span></a>
+<a class="sourceLine" id="cb12-12" title="12">transform (<span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;..#.#&quot;</span></a>
+<a class="sourceLine" id="cb12-13" title="13">transform (<span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> <span class="ch">&#39;#&#39;</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;..###&quot;</span></a>
+<a class="sourceLine" id="cb12-14" title="14">transform (l2  <span class="fu">:</span> l1  <span class="fu">:</span>  _  <span class="fu">:</span> r1  <span class="fu">:</span> r2 ) <span class="fu">=</span> l2 <span class="fu">:</span> l1 <span class="fu">:</span> <span class="ch">&#39;.&#39;</span> <span class="fu">:</span> r1 <span class="fu">:</span> r2</a></code></pre></div>
+<h2 id="algebraic-data-types">Algebraic Data Types</h2>
+<p>Algebraic data types are wonderfully expressive for certain problems. I sorely miss them when working in dynamic languages.</p>
+<p>For example, on Day 13, which involved building an ASCII rail network, I used the ADTs to capture all the possible states my tracks could be in:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">data</span> <span class="dt">Track</span> <span class="fu">=</span> <span class="dt">Track</span> <span class="dt">TrackType</span> <span class="dt">TrackState</span></a>
+<a class="sourceLine" id="cb13-2" title="2">           <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-3" title="3"></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="co">-- | Tracks can point in different directions or be intersections</span></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="kw">data</span> <span class="dt">TrackType</span> <span class="fu">=</span> <span class="dt">TVertical</span>     <span class="co">-- |</span></a>
+<a class="sourceLine" id="cb13-6" title="6">               <span class="fu">|</span> <span class="dt">THorizontal</span>   <span class="co">-- -</span></a>
+<a class="sourceLine" id="cb13-7" title="7">               <span class="fu">|</span> <span class="dt">TDiagonalUp</span>   <span class="co">-- /</span></a>
+<a class="sourceLine" id="cb13-8" title="8">               <span class="fu">|</span> <span class="dt">TDiagonalDown</span> <span class="co">-- \</span></a>
+<a class="sourceLine" id="cb13-9" title="9">               <span class="fu">|</span> <span class="dt">TIntersection</span> <span class="co">-- +</span></a>
+<a class="sourceLine" id="cb13-10" title="10">               <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-11" title="11"></a>
+<a class="sourceLine" id="cb13-12" title="12"><span class="co">-- | Tracks can either be clear or occupied by a cart or crash</span></a>
+<a class="sourceLine" id="cb13-13" title="13"><span class="kw">data</span> <span class="dt">TrackState</span> <span class="fu">=</span> <span class="dt">SCart</span> <span class="dt">CartDirection</span> <span class="dt">IntersectionRule</span></a>
+<a class="sourceLine" id="cb13-14" title="14">                <span class="fu">|</span> <span class="dt">SCrash</span></a>
+<a class="sourceLine" id="cb13-15" title="15">                <span class="fu">|</span> <span class="dt">SClear</span></a>
+<a class="sourceLine" id="cb13-16" title="16">                <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-17" title="17"></a>
+<a class="sourceLine" id="cb13-18" title="18"><span class="co">-- | Carts can move in four directions</span></a>
+<a class="sourceLine" id="cb13-19" title="19"><span class="kw">data</span> <span class="dt">CartDirection</span> <span class="fu">=</span> <span class="dt">DUp</span></a>
+<a class="sourceLine" id="cb13-20" title="20">                   <span class="fu">|</span> <span class="dt">DDown</span></a>
+<a class="sourceLine" id="cb13-21" title="21">                   <span class="fu">|</span> <span class="dt">DLeft</span></a>
+<a class="sourceLine" id="cb13-22" title="22">                   <span class="fu">|</span> <span class="dt">DRight</span></a>
+<a class="sourceLine" id="cb13-23" title="23">                   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-24" title="24"></a>
+<a class="sourceLine" id="cb13-25" title="25"><span class="co">-- | Carts cycle through rules for which way to turn at an intersection</span></a>
+<a class="sourceLine" id="cb13-26" title="26"><span class="kw">data</span> <span class="dt">IntersectionRule</span> <span class="fu">=</span> <span class="dt">RLeft</span></a>
+<a class="sourceLine" id="cb13-27" title="27">                      <span class="fu">|</span> <span class="dt">RStraight</span></a>
+<a class="sourceLine" id="cb13-28" title="28">                      <span class="fu">|</span> <span class="dt">RRight</span></a>
+<a class="sourceLine" id="cb13-29" title="29">                      <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-30" title="30"></a>
+<a class="sourceLine" id="cb13-31" title="31"><span class="kw">type</span> <span class="dt">Coord</span> <span class="fu">=</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)</a>
+<a class="sourceLine" id="cb13-32" title="32"></a>
+<a class="sourceLine" id="cb13-33" title="33"><span class="kw">type</span> <span class="dt">TrackNetwork</span> <span class="fu">=</span> <span class="dt">Map</span> <span class="dt">Coord</span> <span class="dt">Track</span></a></code></pre></div>
+<p>It was then very helpful to have the compiler’s help in making sure I’d handled all the possible values of union types—for example, every track type above in the logic to move a cart.</p>
+<p>I think even more beneficial than type checking was how designing the types for each problem helped me to plan the solution before writing any real code. Thinking in terms of types makes it possible to start at the very top and drill your way down.</p>
+<p>In the Day 13 puzzle, the objective for the first part was—given a number of carts hurtling down the tracks, eventually right at one another—to find the first cart crash. A simple network of tracks looks like this:</p>
+<pre><code>   x axis -&gt;
+
+y  /-&gt;-\
+|  |   |  /----\
+v  | /-+--+-\  |
+   | | |  | v  |
+   \-+-/  \-+--/
+     \------/</code></pre>
+<p>So I started there with the assumption that I’d need a type for the entire network of tracks, and a type for the coordinate pair where the crash occurs:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="ot">firstCrash ::</span> <span class="dt">TrackNetwork</span> <span class="ot">-&gt;</span> <span class="dt">Coord</span></a></code></pre></div>
+<p>This then led to the definition of the track network as a map of coordinates to tracks:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">type</span> <span class="dt">TrackNetwork</span> <span class="fu">=</span> <span class="dt">Map</span> <span class="dt">Coord</span> <span class="dt">Track</span></a></code></pre></div>
+<p>Then I compiled all the information about tracks from the description into the track type. In order to package everything up together—the track direction and whatever’s on top of it—I decided to also store the carts with the tracks themselves:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">data</span> <span class="dt">Track</span> <span class="fu">=</span> <span class="dt">Track</span> <span class="dt">TrackType</span> <span class="dt">TrackState</span></a>
+<a class="sourceLine" id="cb17-2" title="2"></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="co">-- | Tracks can point in different directions or be intersections</span></a>
+<a class="sourceLine" id="cb17-4" title="4"><span class="kw">data</span> <span class="dt">TrackType</span> <span class="fu">=</span> <span class="dt">TVertical</span>     <span class="co">-- |</span></a>
+<a class="sourceLine" id="cb17-5" title="5">               <span class="fu">|</span> <span class="dt">THorizontal</span>   <span class="co">-- -</span></a>
+<a class="sourceLine" id="cb17-6" title="6">               <span class="fu">|</span> <span class="dt">TDiagonalUp</span>   <span class="co">-- /</span></a>
+<a class="sourceLine" id="cb17-7" title="7">               <span class="fu">|</span> <span class="dt">TDiagonalDown</span> <span class="co">-- \</span></a>
+<a class="sourceLine" id="cb17-8" title="8">               <span class="fu">|</span> <span class="dt">TIntersection</span> <span class="co">-- +</span></a>
+<a class="sourceLine" id="cb17-9" title="9"></a>
+<a class="sourceLine" id="cb17-10" title="10"><span class="co">-- | Tracks can either be clear or occupied by a cart or crash</span></a>
+<a class="sourceLine" id="cb17-11" title="11"><span class="kw">data</span> <span class="dt">TrackState</span> <span class="fu">=</span> <span class="dt">SCart</span> <span class="dt">CartDirection</span> <span class="dt">IntersectionRule</span></a>
+<a class="sourceLine" id="cb17-12" title="12">                <span class="fu">|</span> <span class="dt">SCrash</span></a>
+<a class="sourceLine" id="cb17-13" title="13">                <span class="fu">|</span> <span class="dt">SClear</span></a></code></pre></div>
+<p>From here, I continued with carts, which travel in a particular direction and the cycling intersection rule that tells the carts which way to turn.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" title="1"><span class="co">-- | Carts can move in four directions</span></a>
+<a class="sourceLine" id="cb18-2" title="2"><span class="kw">data</span> <span class="dt">CartDirection</span> <span class="fu">=</span> <span class="dt">DUp</span></a>
+<a class="sourceLine" id="cb18-3" title="3">                   <span class="fu">|</span> <span class="dt">DDown</span></a>
+<a class="sourceLine" id="cb18-4" title="4">                   <span class="fu">|</span> <span class="dt">DLeft</span></a>
+<a class="sourceLine" id="cb18-5" title="5">                   <span class="fu">|</span> <span class="dt">DRight</span></a>
+<a class="sourceLine" id="cb18-6" title="6"></a>
+<a class="sourceLine" id="cb18-7" title="7"><span class="co">-- | Carts cycle through rules for which way to turn at an intersection</span></a>
+<a class="sourceLine" id="cb18-8" title="8"><span class="kw">data</span> <span class="dt">IntersectionRule</span> <span class="fu">=</span> <span class="dt">RLeft</span></a>
+<a class="sourceLine" id="cb18-9" title="9">                      <span class="fu">|</span> <span class="dt">RStraight</span></a>
+<a class="sourceLine" id="cb18-10" title="10">                      <span class="fu">|</span> <span class="dt">RRight</span></a></code></pre></div>
+<p>By starting with the types, I had a solid foundation to write the logic to parse the tracks and simulate the cart travel. This is something I’m definitely starting to miss in dynamic languages. There I can still plan the structure of nested data structures, but I can’t encode the rules into its definition in quite the same way.</p>
+<h2 id="plotting-data-with-gnuplot">Plotting Data with Gnuplot</h2>
+<p>For a few different puzzles, I found it useful to plot data generated by the program in order to visualize it.</p>
+<p>There are a number of different Haskell libraries for creating charts that rely on different backends. For example, the <a href="http://hackage.haskell.org/package/Chart">Chart</a> library is backed by Cairo and provides a number of different chart types and export formats.</p>
+<p>After looking around, I settled on <a href="http://hackage.haskell.org/package/easyplot-1.0/docs/Graphics-EasyPlot.html">easyplot</a>, which wraps the <a href="http://www.gnuplot.info/"><code>gnuplot</code></a> command line utility. The package can generate <code>.dat</code> files with the plot data in the Gnuplot-supported format and can run the X11. For example, the following plots two points:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" title="1"><span class="fu">&gt;</span> plot <span class="dt">X11</span> <span class="fu">$</span> <span class="dt">Data2D</span> [<span class="dt">Title</span> <span class="st">&quot;Sample Data&quot;</span>] [] [(<span class="dv">0</span>, <span class="dv">1</span>), (<span class="dv">5</span>, <span class="dv">2</span>)]</a></code></pre></div>
+<p>It’s also possible to pass functions:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" title="1"><span class="fu">&gt;</span> plot <span class="dt">X11</span> <span class="fu">sin</span></a></code></pre></div>
+<p>Plots can also be rendered to PNG instead by swapping <code>X11</code> for <code>(PNG "sin.png")</code>:</p>
+<p><img src="/images/sin.png" /></p>
+<p>Gnuplot is ancient, so it doesn’t produce the prettiest charts, but I found it and its Haskell wrapper lovely for their simplicity. Without passing any options, they already produce something reasonable. This is great for trying to make sense of data without getting bogged down in the the details.</p>
+<p>With the <code>.dat</code> file generated by the Haskell wrapper, <code>gnuplot</code> can also be ran directly, which allows for configuring plotting on the command line, e.g.:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb21-1" title="1">$ <span class="ex">gnuplot</span> -e <span class="st">&#39;set term x11 persist; set size 0.5,0.15; plot &quot;plot1.dat&quot;&#39;</span></a></code></pre></div>
+<p>Other programs can also render Gnuplot <code>.dat</code> files, so there’s a lot you can do with the data once it’s out of your Haskell program.</p>
+<p>I used this strategy for Day 10, which involved finding a message formed by shooting stars as they align for a split second. I didn’t really know what to expect—I wasn’t sure if all the stars would cluster together or only some of them, so I decided to plot the coordinates when alignment reached a certain threshold and take a look. It worked pretty well:</p>
+<p><img src="/images/stars.png" /><span><label for="sn-6" class="margin-toggle">&#8853;</label><input type="checkbox" id="sn-6" class="margin-toggle"/><span class="marginnote"> In case you’re wondering, as I did for a long while, the message is upside down.<br />
+<br />
+</span></span></p>
+<p>Here I used the <code>gnuplot</code> command above to squeeze the y-axis to make the letters readable.</p>
+<h2 id="formatting-code">Formatting Code</h2>
+<p>While it has nothing to do with puzzles, automatic code formatting has become an important part of my workflow.</p>
+<p>This past year, I’ve been using Elixir’s <code>mix format</code> (inspired by tools like <code>gofmt</code>) to format all the Elixir code I write. I used to think aligning the code to make it “pretty” was my job, but now I’ve realized that’s a big waste of time.</p>
+<p>Haskell doesn’t yet and may never have a canonical formatter included with GHC, but there are some different packages to fill this need.</p>
+<p>I used <a href="https://github.com/lspitzner/brittany">brittany</a> to format my solutions and was impressed with the results. I didn’t always agree with it’s choices, but I think that’s the trade-off when using a formatter.</p>]]></description>
+    <pubDate>Tue, 05 Feb 2019 00:00:00 UT</pubDate>
+    <guid>https://ndreynolds.com/posts/2019-02-05-learning-haskell-via-advent-of-code.html</guid>
+    <dc:creator>Nick Reynolds</dc:creator>
+</item>
+<item>
+    <title>Building Terminal Apps with Elixir</title>
+    <link>https://ndreynolds.com/posts/2019-01-27-terminal-apps-with-elixir.html</link>
+    <description><![CDATA[<p><img src="/images/ratatouille.png" /></p>
+<p>Elixir may seem like an odd choice for building terminal applications. In fact, when I started this project, that’s exactly what I thought.</p>
+<p>Before I get into that, I’ll first give you some background as to why I even would try something like that, then I promise to get back to building terminal apps.</p>
+<!--more-->
+<h2 id="connecting-to-remote-observer-nodes">Connecting to remote Observer nodes</h2>
+<p>Where I work, we run our Elixir apps in production as Erlang <a href="http://erlang.org/doc/design_principles/release_structure.html">OTP releases</a> built with <a href="https://github.com/bitwalker/distillery">Distillery</a>. The OTP releases run in Docker containers. The containers are now orchestrated with Kubernetes, but at the time we were using <a href="https://rancher.com/">Rancher</a>.</p>
+<p>A little over a year ago, I desperately wanted to connect the Erlang <a href="http://erlang.org/doc/man/observer.html">Observer</a><span><label for="sn-1" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-1" class="margin-toggle"/><span class="sidenote">In case you haven’t used it, Observer is one of my favorite tools in the Erlang toolbox. I don’t know of any other VM that provides the same level of insight into the running system. Start it with <code>:observer.start()</code> in the IEx shell.<br />
+<br />
+</span></span> to one of our production nodes. I was debugging some background jobs that we’d implemented via gen_server processes, and was confused by their behavior in production.</p>
+<p>Observer is a GUI application built with wxWidgets, so while it runs on most platforms, you do need a desktop environment to run it. It’s also possible to connect it to remote Erlang nodes, including those running on headless servers.</p>
+<p>Connecting Observer to a remote Erlang node is usually accomplished with SSH port forwarding to avoid needing to publicly expose your Erlang node.</p>
+<p>Each server runs a program called <a href="http://erlang.org/doc/man/epmd.html">epmd</a> (Erlang Port Mapper Daemon) which acts as a name server (or, say, a phone book) for all the Erlang nodes running on the server. When an Erlang node starts up in distributed mode, it sends its name and port to epmd for registration. All of the currently registered names can be retrieved with <code>epmd -names</code> or from an Erlang shell with <code>net_adm:names()</code>.</p>
+<p>In the same way, Observer gets these names from epmd and displays them under the “Nodes” menu item. So the magic of SSH port forwarding here is that we can just trick Observer into think it’s talking to the local epmd.</p>
+<p>First, on the remote server, get epmd’s port and the port of the node you’d like to connect to:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1">$ <span class="ex">epmd</span> -names</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ex">epmd</span>: up and running on port 4369 with data:</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="ex">name</span> foo at port 39793</a></code></pre></div>
+<p>And now forward both of those ports to localhost:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1">$ <span class="fu">ssh</span> -L 4369:localhost:4369 -L 39793:localhost:39793 remotehost</a></code></pre></div>
+<p>Now the remote epmd and remote node are both listening locally, which allows Observer to connect to the remote epmd and node as if they were also running locally.</p>
+<p>Containers unfortunately add a few more layers to this, as Docker and the container orchestrator both have their own networking layers complete with their own port mappers. For example, connecting to a container via its port requires mapping a host port to the container port and connecting via the host port.<span><label for="sn-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-2" class="margin-toggle"/><span class="sidenote">With Kubernetes, this is possible with the <code>kubectl port-forward</code> command. There’s even <a href="https://gist.github.com/AndrewDryga/6f273c7a9117d10ec347b47420367e49">a nice script</a> to automate it.<br />
+<br />
+</span></span></p>
+<p>I tried for quite a while to thread my connection through all the layers in our container running under Rancher, but I was never able to get it working with dynamic ports.</p>
+<h2 id="an-erlang-observer-for-the-terminal">An Erlang observer for the terminal</h2>
+<p>In my frustration, I started to ask why I can’t just run this thing in the terminal. I’m a big fan of the terminal <code>top</code> and <code>htop</code> utils for exactly this reason. They work everywhere: on my Mac, on my Linux machine, and on whatever random VM I happen to be ssh-ed into.</p>
+<p>So I started to look around and I discovered <code>etop</code>, which comes bundled with Erlang:</p>
+<pre><code>iex&gt; :etop.start()
+========================================================================================
+ nonode@nohost                                                             21:56:50
+ Load:  cpu         0               Memory:  total       23976    binary         84
+        procs      56                        processes    6879    code         7958
+        runq        0                        atom          388    ets           598
+
+Pid            Name or Initial Func    Time    Reds  Memory    MsgQ Current Function
+----------------------------------------------------------------------------------------
+&lt;0.64.0&gt;       group:server/3           &#39;-&#39;   34192  973332       0 group:server_loop/3
+&lt;0.111.0&gt;      etop_txt:init/1          &#39;-&#39;    6970   42348       0 etop:update/1
+&lt;0.8.0&gt;        erl_prim_loader          &#39;-&#39;    1161  196980       0 erl_prim_loader:loop
+&lt;0.62.0&gt;       user_drv                 &#39;-&#39;    1109   13820       0 user_drv:server_loop
+&lt;0.48.0&gt;       code_server              &#39;-&#39;     214  284652       0 code_server:loop/1
+&lt;0.113.0&gt;      erlang:apply/2           &#39;-&#39;      31    2808       0 observer_backend:fla
+&lt;0.66.0&gt;       kernel_refc              &#39;-&#39;      17    3192       0 gen_server:loop/7
+&lt;0.44.0&gt;       application_master:i     &#39;-&#39;       2    4008       0 application_master:m
+&lt;0.61.0&gt;       supervisor_bridge:us     &#39;-&#39;       2   13784       0 gen_server:loop/7
+&lt;0.65.0&gt;       kernel_config:init/1     &#39;-&#39;       2    2820       0 gen_server:loop/7
+========================================================================================
+</code></pre>
+<p>Erlang Top prints some basic system stats along with the top 10 processes (sorted by reductions by default). It’s a great tool for every BEAM user’s toolbox to get an overview of the system health before you start digging deeper with other tools.</p>
+<p>But what I was still really searching for was a real application like Observer, only text-based. For example, I wanted to visualize the supervision tree, find a process in it, and kill it, just by moving my cursor and pressing a few keys.</p>
+<p>So I set out to build my own text-based Observer.</p>
+<h2 id="termbox-and-c-and-nifs-oh-my">Termbox and C and NIFs, Oh My!</h2>
+<p>I knew that in order to be able to scroll with the arrow keys or click with the mouse, I’d need to allow the application to capture keyboard and click events.</p>
+<p>Then I realized fairly quickly that it’s not as easy as it sounds. While Elixir &amp; Erlang provide the ability to get a line (<code>IO.gets/1</code>) or a number of bytes/characters (<code>IO.getn/1</code>) from stdin, this is always line-buffered, meaning they don’t receive anything until either the <code>&lt;enter&gt;</code> key or <code>&lt;ctrl-d&gt;</code> key is pressed.</p>
+<p>The explanation for this is that the terminal runs in what’s called <a href="https://en.wikipedia.org/wiki/Terminal_mode">cooked mode</a> by default, which pre-processes (cooks) input before giving it to the program. Programs that need to handle key presses (for example, editors like vi and emacs) work by switching to <a href="https://en.wikipedia.org/wiki/Terminal_mode">raw mode</a>, which allows for polling for each individual event.</p>
+<p>Since there’s no Erlang API for changing the mode, I realized I’d have to do it myself from C code, and I’d need some sort of <a href="http://erlang.org/doc/tutorial/c_port.html">Port</a> or <a href="http://erlang.org/doc/tutorial/nif.html">NIF</a> for that to work.</p>
+<p>Moreover, terminal applications control the terminal by sending it ANSI escape codes. These codes can vary by terminal and system, so applications typically use a database called terminfo to find correct control sequences for the current system.</p>
+<p>Because this is all still pretty tedious, most applications use a library like curses or ncurses to do the heavy lifting, so they can focus on the application logic.</p>
+<p>In my case, I’d already had my eye on an alternative called <a href="https://github.com/nsf/termbox">termbox</a>, which aims to provide a more minimal API for controlling the terminal to write text-based user interfaces. Termbox treats the terminal as a grid of cells, and provides 12 main functions to manipulate it:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb4-1" title="1">tb_init() <span class="co">// initialization</span></a>
+<a class="sourceLine" id="cb4-2" title="2">tb_shutdown() <span class="co">// shutdown</span></a>
+<a class="sourceLine" id="cb4-3" title="3"></a>
+<a class="sourceLine" id="cb4-4" title="4">tb_width() <span class="co">// width of the terminal screen</span></a>
+<a class="sourceLine" id="cb4-5" title="5">tb_height() <span class="co">// height of the terminal screen</span></a>
+<a class="sourceLine" id="cb4-6" title="6"></a>
+<a class="sourceLine" id="cb4-7" title="7">tb_clear() <span class="co">// clear buffer</span></a>
+<a class="sourceLine" id="cb4-8" title="8">tb_present() <span class="co">// sync internal buffer with terminal</span></a>
+<a class="sourceLine" id="cb4-9" title="9"></a>
+<a class="sourceLine" id="cb4-10" title="10">tb_put_cell()</a>
+<a class="sourceLine" id="cb4-11" title="11">tb_change_cell()</a>
+<a class="sourceLine" id="cb4-12" title="12">tb_blit() <span class="co">// drawing functions</span></a>
+<a class="sourceLine" id="cb4-13" title="13"></a>
+<a class="sourceLine" id="cb4-14" title="14">tb_select_input_mode() <span class="co">// change input mode</span></a>
+<a class="sourceLine" id="cb4-15" title="15">tb_peek_event() <span class="co">// peek a keyboard event</span></a>
+<a class="sourceLine" id="cb4-16" title="16">tb_poll_event() <span class="co">// wait for a keyboard event</span></a></code></pre></div>
+<p>This minimal API is certainly much lighter than the ncurses API. On my machine, <code>termbox.h</code> is only 320 lines, while <code>ncurses.h</code> is 2094 lines. While that also means it’s missing some features, I figured a minimal API would be easier to build on top of, as I didn’t want to spend so much time working in C, and was more interested in building abstractions in Elixir.</p>
+<p>So the next step was figuring out how to use it from Elixir. To do that, I created a library called <a href="https://github.com/ndreynolds/ex_termbox">ex_termbox</a> that provides bindings to the termbox library as NIFs dynamically linked to the Erlang VM process.</p>
+<p>NIFs aren’t always a good idea, as they make it very easy to crash the otherwise rock-solid VM with segfault errors, but if there’s no better alternative and it’s properly tested, I think using NIFs can make sense.</p>
+<p>For the most part, the NIFs in ex_termbox are thin wrappers around the corresponding termbox function. For example, the NIF for retrieving the terminal width looks like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb5-1" title="1"><span class="co">// c_src/termbox_bindings.c</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="dt">static</span> ERL_NIF_TERM extb_width(ErlNifEnv *env, <span class="dt">int</span> argc,</a>
+<a class="sourceLine" id="cb5-3" title="3">                               <span class="dt">const</span> ERL_NIF_TERM argv[]) {</a>
+<a class="sourceLine" id="cb5-4" title="4">  <span class="dt">int32_t</span> width = tb_width();</a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="cf">return</span> enif_make_int(env, width);</a>
+<a class="sourceLine" id="cb5-6" title="6">}</a></code></pre></div>
+<p>NIFs can receive Erlang terms as arguments and need to return Erlang terms. The <code>erl_nif.h</code> header declares functions and defines macros that help with converting to and from native types.</p>
+<p>On the Elixir or Erlang side—when it comes to NIFs there’s no real difference—it’s necessary to load the native implementation (i.e., the shared lib) and define a stub implementation for each NIF:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode elixir"><code class="sourceCode elixir"><a class="sourceLine" id="cb6-1" title="1"><span class="co"># lib/ex_termbox/bindings.ex</span></a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="kw">defmodule</span> <span class="cn">ExTermbox</span><span class="op">.</span><span class="cn">Bindings</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="ot">@on_load</span> <span class="va">:load_nifs</span></a>
+<a class="sourceLine" id="cb6-5" title="5"></a>
+<a class="sourceLine" id="cb6-6" title="6">  <span class="kw">def</span> load_nifs <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    so_path <span class="op">=</span> <span class="cn">Path</span><span class="op">.</span>join(<span class="va">:code</span><span class="op">.</span>priv_dir(<span class="va">:ex_termbox</span>), <span class="st">&quot;termbox_bindings&quot;</span>)</a>
+<a class="sourceLine" id="cb6-8" title="8">    <span class="va">:erlang</span><span class="op">.</span>load_nif(so_path, <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb6-9" title="9">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb6-10" title="10"></a>
+<a class="sourceLine" id="cb6-11" title="11">  <span class="kw">def</span> width <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-12" title="12">    <span class="cf">raise</span>(<span class="st">&quot;NIF width/0 not implemented&quot;</span>)</a>
+<a class="sourceLine" id="cb6-13" title="13">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb6-14" title="14"></a>
+<a class="sourceLine" id="cb6-15" title="15">  <span class="co"># other stubs...</span></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="kw">end</span></a></code></pre></div>
+<p>With the bindings in place, the Elixir version works just like the C library.</p>
+<h2 id="the-imperative-mood">The Imperative Mood</h2>
+<p>At this point, I thought I was done with yak shaving. It was time to write a terminal application.</p>
+<p>But when I started to look at how real terminal applications are written, I realized that most terminal applications are written completely imperatively—i.e., as a step by step procedure for drawing the UI. For example, if you want to render a box, you start drawing lines in some kind of for-loop. Maybe later you package your box drawing logic as a procedure of its own, but its always up to the programmer to define the steps:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode c"><code class="sourceCode c"><a class="sourceLine" id="cb7-1" title="1"><span class="cf">for</span> (<span class="dv">0</span>; y &lt; height; y++) {</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="cf">for</span> (<span class="dv">0</span>; x &lt; width; x++) {</a>
+<a class="sourceLine" id="cb7-3" title="3">    draw_cell(x, y, <span class="st">&quot;-&quot;</span>);</a>
+<a class="sourceLine" id="cb7-4" title="4">  }</a>
+<a class="sourceLine" id="cb7-5" title="5">}</a></code></pre></div>
+<p>On the web, we’re lucky to have declarative languages like HTML and CSS. Take, for example, the definition of a simple HTML table:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode html"><code class="sourceCode html"><a class="sourceLine" id="cb8-1" title="1"><span class="kw">&lt;table&gt;</span></a>
+<a class="sourceLine" id="cb8-2" title="2">  <span class="kw">&lt;tbody&gt;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">    <span class="kw">&lt;tr&gt;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">      <span class="kw">&lt;td&gt;</span>A<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb8-5" title="5">      <span class="kw">&lt;td&gt;</span>B<span class="kw">&lt;/td&gt;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">    <span class="kw">&lt;/tr&gt;</span></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">&lt;/tbody&gt;</span></a>
+<a class="sourceLine" id="cb8-8" title="8"><span class="kw">&lt;/table&gt;</span></a></code></pre></div>
+<p>I don’t have to tell the browser how to draw the table; it figures it out for me based on my declaration of the table’s structure. This is especially nice, because the browser will render the table differently based on the amount of screen real estate available for it.</p>
+<p>Having worked a long time on web applications, I wasn’t willing to give up the benefits of declarative UIs. I wanted to build UIs in my terminal app the same way I build websites. I didn’t want my application logic to get lost in a sea of drawing commands, and I also didn’t want the imperative style that my termbox NIFs inherently have leak into my codebase.</p>
+<h2 id="a-terminal-ui-kit-for-elixir">A Terminal UI Kit for Elixir</h2>
+<p><a href="https://github.com/ndreynolds/ratatouille">Ratatouille</a> is the other library I created on this adventure. It grew out of ex_termbox as a way to address this problem with views.</p>
+<p>Ratatouille aims to define an HTML for the terminal and provide the rendering engine for it. Users can declare a UI and Ratatouille should figure out how to draw it to the screen. Because there’s no absolute positioning, the UI can be adapted to different terminal dimensions, and extended without the need to go through and update any pixel values.</p>
+<p>Ratatouille’s HTML is implemented as an Elixir DSL:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode elixir"><code class="sourceCode elixir"><a class="sourceLine" id="cb9-1" title="1">panel(<span class="va">title:</span> <span class="st">&quot;Processes&quot;</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-2" title="2">  table <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-3" title="3">    table_row <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-4" title="4">      table_cell(<span class="va">content:</span> <span class="st">&quot;PID&lt;0.1.2&gt;&quot;</span>)</a>
+<a class="sourceLine" id="cb9-5" title="5">      table_cell(<span class="va">content:</span> <span class="st">&quot;512351 reds&quot;</span>)</a>
+<a class="sourceLine" id="cb9-6" title="6">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb9-7" title="7">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb9-8" title="8"><span class="kw">end</span></a></code></pre></div>
+<p>That looks a lot like code, but it’s actually just a tree of elements, no different than what you could define with XML:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode xml"><code class="sourceCode xml"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">&lt;panel</span><span class="ot"> title=</span><span class="st">&quot;Processes&quot;</span><span class="kw">&gt;</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  <span class="kw">&lt;table&gt;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">    <span class="kw">&lt;table-row&gt;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">      <span class="kw">&lt;table-cell</span><span class="ot"> content=</span><span class="st">&quot;PID</span><span class="er">&lt;</span><span class="st">0.1.2&gt;&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">      <span class="kw">&lt;table-cell</span><span class="ot"> content=</span><span class="st">&quot;512351 reds&quot;</span> <span class="kw">/&gt;</span></a>
+<a class="sourceLine" id="cb10-6" title="6">    <span class="kw">&lt;/table-row&gt;</span></a>
+<a class="sourceLine" id="cb10-7" title="7">  <span class="kw">&lt;/table&gt;</span></a>
+<a class="sourceLine" id="cb10-8" title="8"><span class="kw">&lt;/panel&gt;</span></a></code></pre></div>
+<p>But because it’s defined in Elixir, the DSL simultaneously serves as a templating language, meaning it’s possible to mix in comprehensions, cases and conditionals:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode elixir"><code class="sourceCode elixir"><a class="sourceLine" id="cb11-1" title="1">panel(<span class="va">title:</span> <span class="st">&quot;Processes&quot;</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-2" title="2">  table <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-3" title="3">    <span class="kw">for</span> proc <span class="op">&lt;-</span> processes <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-4" title="4">      table_row <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-5" title="5">        table_cell(<span class="va">content:</span> proc<span class="op">.</span>name)</a>
+<a class="sourceLine" id="cb11-6" title="6">        table_cell(<span class="va">content:</span> proc<span class="op">.</span>reductions)</a>
+<a class="sourceLine" id="cb11-7" title="7">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-8" title="8">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-9" title="9">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-10" title="10"><span class="kw">end</span></a></code></pre></div>
+<p>The biggest challenge was (and still is) actually rendering the elements defined with the DSL. A rendering engine is in charge of both drawing and laying out content. Drawing is actually pretty easy once you have the layout.</p>
+<p>Ratatouille renders content by reducing the element tree to a canvas of cells, and then later drawing the cells to the window in a single batch update.</p>
+<p>The canvas is a struct which consists of a grid of cells (MxN) and a gradually gradually shrinking box representing the renderable region of the grid (the render box).</p>
+<p>As an example, columns are rendered by dividing the render box horizontally and rendering each column’s children within that subdivision of the render box. Each of the resulting grids are then merged together to produce the complete grid.</p>
+<h2 id="actually-writing-terminal-apps">(Actually) Writing Terminal Apps</h2>
+<p>As soon as the libraries were just barely working, I turned back to my original idea of a text-based Observer and started building it. It’s been a great way to test the libraries, as developing a real application tends to surface the bugs and guide the development towards what’s important.</p>
+<p>The text-based Observer, which I’ve released as <a href="https://github.com/ndreynolds/toby">toby</a>, aims to be (at least for now) a clone of the Observer GUI.</p>
+<p>The Observer GUI is divided into 8 different tabs, so that’s where I started:</p>
+<figure>
+<img src="/images/observer-tabs.png" alt="Observer’s tabs" /><figcaption>Observer’s tabs</figcaption>
+</figure>
+<figure>
+<img src="/images/toby-tabs.png" alt="toby’s tabs" /><figcaption>toby’s tabs</figcaption>
+</figure>
+<p>If you’ve ever created a computer game before, you’re probably familiar with a game loop. A game loop processes input, updates the game state, renders the game state to the screen, and then starts all over again.</p>
+<p>I discovered that terminal apps can be built with a very similar loop. Toby started out like this:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode elixir"><code class="sourceCode elixir"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">def</span> start <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-2" title="2">  {<span class="va">:ok</span>, _} <span class="op">=</span> <span class="cn">Ratatouille</span><span class="op">.</span><span class="cn">Window</span><span class="op">.</span>start_link()</a>
+<a class="sourceLine" id="cb12-3" title="3">  {<span class="va">:ok</span>, _} <span class="op">=</span> <span class="cn">Ratatouille</span><span class="op">.</span><span class="cn">EventManager</span><span class="op">.</span>start_link()</a>
+<a class="sourceLine" id="cb12-4" title="4">  <span class="cn">Ratatouille</span><span class="op">.</span><span class="cn">EventManager</span><span class="op">.</span>subscribe(self())</a>
+<a class="sourceLine" id="cb12-5" title="5"></a>
+<a class="sourceLine" id="cb12-6" title="6">  loop(<span class="va">:system</span>)</a>
+<a class="sourceLine" id="cb12-7" title="7"><span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-8" title="8"></a>
+<a class="sourceLine" id="cb12-9" title="9"><span class="kw">def</span> loop(current_tab) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-10" title="10">  <span class="cn">Ratatouille</span><span class="op">.</span><span class="cn">Window</span><span class="op">.</span>update(render(current_tab))</a>
+<a class="sourceLine" id="cb12-11" title="11"></a>
+<a class="sourceLine" id="cb12-12" title="12">  <span class="kw">receive</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-13" title="13">    {<span class="va">:event</span>, %{<span class="va">ch:</span> ?q}} <span class="op">-&gt;</span> quit()</a>
+<a class="sourceLine" id="cb12-14" title="14">    {<span class="va">:event</span>, %{<span class="va">ch:</span> ?s}} <span class="op">-&gt;</span> loop(<span class="va">:system</span>)</a>
+<a class="sourceLine" id="cb12-15" title="15">    {<span class="va">:event</span>, %{<span class="va">ch:</span> ?l}} <span class="op">-&gt;</span> loop(<span class="va">:load</span>)</a>
+<a class="sourceLine" id="cb12-16" title="16">    {<span class="va">:event</span>, %{<span class="va">ch:</span> ?m}} <span class="op">-&gt;</span> loop(<span class="va">:memory</span>)</a>
+<a class="sourceLine" id="cb12-17" title="17">    {<span class="va">:event</span>, %{<span class="va">ch:</span> ?a}} <span class="op">-&gt;</span> loop(<span class="va">:applications</span>)</a>
+<a class="sourceLine" id="cb12-18" title="18">    {<span class="va">:event</span>, %{<span class="va">ch:</span> ?p}} <span class="op">-&gt;</span> loop(<span class="va">:processes</span>)</a>
+<a class="sourceLine" id="cb12-19" title="19">    {<span class="va">:event</span>, %{<span class="va">ch:</span> ?r}} <span class="op">-&gt;</span> loop(<span class="va">:ports</span>)</a>
+<a class="sourceLine" id="cb12-20" title="20">  <span class="kw">after</span></a>
+<a class="sourceLine" id="cb12-21" title="21">    <span class="dv">1_000</span> <span class="op">-&gt;</span> loop(current_tab)</a>
+<a class="sourceLine" id="cb12-22" title="22">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-23" title="23"><span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-24" title="24"></a>
+<a class="sourceLine" id="cb12-25" title="25"><span class="kw">def</span> render(<span class="va">:system</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-26" title="26">  view <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-27" title="27">    panel <span class="va">title:</span> <span class="st">&quot;System&quot;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-28" title="28">      <span class="co"># Rest of the view...</span></a>
+<a class="sourceLine" id="cb12-29" title="29">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-30" title="30">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-31" title="31"><span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-32" title="32"></a>
+<a class="sourceLine" id="cb12-33" title="33"><span class="kw">def</span> render(<span class="va">:load</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-34" title="34">  view <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-35" title="35">    panel <span class="va">title:</span> <span class="st">&quot;Load Charts&quot;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-36" title="36">      <span class="co"># Rest of the view...</span></a>
+<a class="sourceLine" id="cb12-37" title="37">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-38" title="38">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-39" title="39"><span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-40" title="40"></a>
+<a class="sourceLine" id="cb12-41" title="41"><span class="co"># Other render definitions...</span></a></code></pre></div>
+<p>This initial version of toby prototyped the application loop and the framework for tabs and switching between them. By pressing “p” on my keyboard, I can switch to the “Processes” tab. Then by pressing “a”, I can switch to the “Applications” tab. Only one tab is ever rendered at a time.</p>
+<p>The pattern is simple but very powerful. The code spends the majority of its time in the <code>loop/1</code> function and has the chance to process one event per loop. There’s no risk of losing events while we’re doing something else, as they’ll sit in the process mailbox (a FIFO queue) until we’re able to process them. After 1 second without an event, the loop is always restarted. This gives time-sensitive views a chance to update their content.</p>
+<p>The state is stored in the recursion itself, by passing it (or an updated version) in any recursive calls. That’s actually the same way a gen_server works.</p>
+<p>Rendering is just a business of writing functions that return views. I knew in the beginning from my experiences with React.js and Elm that “render” (or “view”) functions should be purely functional. If a render function always returns the same view for two calls with the same arguments, meaning it has no side-effects, it’s possible to do smart things. We can skip rendering if the arguments haven’t changed. When multiple render functions are called, we can parallelize them or render them out of order without affecting the final result.</p>
+<p>In Elixir, there’s nothing to stop us from, say, reading and writing to ETS tables in render functions, so this is only a contract we strive to abide by.</p>
+<h2 id="fetching-data">Fetching Data</h2>
+<p>One important piece of the puzzle is missing from the last section. The first version of my application had only the current tab as application state. Moreover, we have a contract that render functions will never have side effects. So where does the data come from?</p>
+<p>Experienced app developers know that you should never block the UI thread. Users expect to be able to interact with a system even when it’s busy making API requests or processing video. Otherwise they couldn’t cancel or abort these sorts of operations.</p>
+<p>The same applies to the application loop. Rendering doesn’t just need to be pure, it has to be really fast. Similarly, handling an event also needs to be really fast so that the user can be given some kind of acknowledgment ASAP—even if it’s just a loading spinner.</p>
+<p>For toby, which I someday hope to use in production, this is especially important. If you’re using Observer to debug a problem, chances are your system is already wounded. Retrieving information from a production system has to be done carefully so as to not overload it. I needed to make sure no amount of button mashing in my application would overload the BEAM.</p>
+<p>It turns out Elixir has a great solution to this problem; we can spawn processes to do expensive things like loading data in the background. This is when I started to realize that Elixir is actually really great for writing apps.</p>
+<p>In toby, I created a <code>Data</code> context to deal with the all things data-related:</p>
+<pre><code>lib/toby/data/
+├── applications.ex
+├── provider.ex
+├── sampler.ex
+└── server.ex</code></pre>
+<p>There’s <code>Data.Server</code> which acts as the public API and caching layer for retrieving statistics about the VM. It doesn’t mind being asked the same questions over and over again. Unless the cache entry is missing or expired (currently a 2 second expiry), it happily serves data directly from its cache (the gen_server state). This makes it possible to rapidly scroll through the processes list, as we only fetch the processes at most once every 2 seconds.</p>
+<p>When the cache is expired or there’s no cache entry, requests are looked up with <code>Data.Provider</code>, which does all the expensive lookups. For toby, it’s currently fast enough to load everything within the scope of the <code>GenServer.call/3</code> to the <code>Data.Server</code> process (most calls take microseconds), but in other apps this approach could be adapted to keep the cache warm or to request data asynchronously.</p>
+<p>To display charts and other historical views, the server also maintains a circular buffer of system “samples” from <code>Data.Sampler</code>. Because sampling is done by the <code>Data.Server</code></p>
+<h2 id="scaling-application-state">Scaling Application State</h2>
+<p>If render functions are pure, everything that we want to render has to live in the application loop’s state. For toby, that meant that the individual state for each tab had to be stored altogether in a big map. Without introducing new loops, there’s no real way around this.</p>
+<p>Bundling everything together in one big loop has its pros and cons. One big map of state is easy to understand, but can look messy. Handling all the events for all the tabs in one place also starts to get a little out of control.</p>
+<p>I played for a long time with different ways of combatting this. I experimented with React-style components, which each have their own state and event handlers. I didn’t want to run unnecessary processes to actually give them local state, so I faked it by having the application loop hold onto the component state and pass it component callbacks like <code>render/1</code> and <code>handle_event/2</code>.</p>
+<p>But my component solution started to feel a bit wrong in a functional language like Elixir. In React, you can arbitrarily nest component state and event handling. I realized that it works because React components map to the Document Object Model. They’re objects. Objects can store state and trigger events. Events on objects can have complex delegation (e.g. bubbling) logic.</p>
+<blockquote>
+<p>Components are objects!</p>
+<p>components = local state + methods</p>
+<p>local state + methods = objects</p>
+<p><a href="https://twitter.com/czaplic/status/903266544544878592" class="uri">https://twitter.com/czaplic/status/903266544544878592</a></p>
+</blockquote>
+<p>With some inspiration from Elm Architecture, I decided to embrace the application loop and built a small runtime around it.</p>
+<p>Now the application just defines <code>model</code>, <code>update</code>, and <code>render</code> functions, and the runtime handles wiring everything up. In the future, it’ll make it possible to add things like state snapshots or even a time-traveling debugger.</p>
+<p>You can find the current definition of the toby application here:</p>
+<p><a href="https://github.com/ndreynolds/toby/blob/master/lib/toby/app.ex" class="uri">https://github.com/ndreynolds/toby/blob/master/lib/toby/app.ex</a></p>
+<hr />
+<p>There’s still a lot of work to do on toby and the supporting libraries. I intend for Ratatouille to be useful for all sorts of applications.</p>
+<p>So that’s how I got started writing terminal apps in Elixir.</p>
+<p>It’s been a lot of work so far, but the results have been promising. I really think Elixir is a great choice for building all sorts of applications.</p>
+<p>Erlang makes concurrency easy, Elixir’s macros make it possible to write expressive DSLs, and both provide a nice functional framework that encourages simplicity and reduces bugs while remaining pragmatic enough to get things done.</p>]]></description>
+    <pubDate>Sun, 27 Jan 2019 00:00:00 UT</pubDate>
+    <guid>https://ndreynolds.com/posts/2019-01-27-terminal-apps-with-elixir.html</guid>
+    <dc:creator>Nick Reynolds</dc:creator>
+</item>
+<item>
+    <title>Rust: First Impressions</title>
+    <link>https://ndreynolds.com/posts/2015-02-10-rust-first-impressions.html</link>
+    <description><![CDATA[<p>I recently decided to give the <a href="http://rust-lang.org">Rust programming language</a> a try. Although Rust had crossed my radar a few times before, I’d never gotten much further than <em>Hello World!</em>. The language has undergone a lot of change over the last few years, but things appear to finally be slowing down for its upcoming 1.0 release.</p>
+<!--more-->
+<h3 id="the-project">The Project</h3>
+<p>My latest encounter with Rust began when I set out to write a ray tracer to get some experience with graphics programming. I initially considered a few different languages.</p>
+<p>As a <a href="https://github.com/search?utf8=%E2%9C%93&amp;q=raytracer">GitHub search for “raytracer”</a> shows, the typical language for the job is C++. And I think it makes sense. You have to recursively trace about a million rays of light through the scene, so you need something fast (or a book to read while you wait for your Ruby ray tracer to finish executing). It’s also a problem that maps well to the OOP paradigm. The “scene” will naturally have different sorts of shapes (e.g., planes, spheres, cubes), each with a mix of shared and unique behavior that can be modeled well with inheritance. Finally, bindings to a decent graphics library are a must, which C++ also accommodates.</p>
+<p>It turns out that Rust also nicely meets these requirements. It’s fast, more or less supports OOP via its trait system, and has at least <a href="https://github.com/PistonDevelopers/image">one nice graphics library</a>. So I gave it a try. What follows are my impressions of the language as a Rust novice (so take my praises and criticisms with a grain of salt).</p>
+<h3 id="the-good">The Good</h3>
+<p>I had a pretty great experience with Rust, so there was a lot to like.</p>
+<h4 id="ownership">Ownership</h4>
+<p>Ownership is probably the most unique of Rust’s features. It’s also what I struggled the most with when it came to getting my code to compile.</p>
+<p>The idea is that since Rust code isn’t garbage collected, and the programmer isn’t managing memory, the compiler needs some way to keep track of the <em>lifetime</em> of your data so that it can allocate and deallocate memory for you. In theory, this is awesome. You get the performance benefits of managing your own memory with all the safety of a garbage collected language.</p>
+<p>In order for that to work, the compiler enforces a set of rules for ownership and borrowing of pointers and other resources. Resources are said to be <em>owned</em> by their variables. They can be borrowed by another variable, but just like a bike you lend out, the owner can’t use it while it’s being borrowed.</p>
+<p>It does get a bit complicated and I’m not yet experienced enough to describe it in more detail, but I’m really liking the ownership system so far. I’ll qualify that by saying, given the choice between manually managing my memory or letting Rust do it, I’d choose Rust. Comparing Rust to a GC-ed language isn’t quite fair, as Rust is presumably being used because GC isn’t an option.</p>
+<p>While the “borrow checker” has been the biggest hindrance in getting my Rust code to compile, it (theoretically) protects you from a whole class of memory issues (like leaks and dangling pointers). Based on my experience so far, I do think fighting the borrow checker is vastly preferable to hunting down the cause of a segfault in a large C/C++ codebase.</p>
+<h4 id="cargo">Cargo</h4>
+<p><a href="https://crates.io/">Cargo</a>, Rust’s package manager, has been a pleasure to work with. The best kind of package managers are the ones that just work, and so far that’s been for me with Cargo. The tool is reminiscent in many ways of Ruby’s <a href="http://bundler.io/">Bundler</a>, and it turned out that wasn’t a coincidence as <a href="https://mail.mozilla.org/pipermail/rust-dev/2014-March/009090.html">both were created by the same people</a>.</p>
+<p>Cargo is similar to Bundler in that it provides a simple way to list out your build dependencies—each from either <a href="https://crates.io/">crates.io</a> (the rubygems.org equivalent), a GitHub repo, or from the local filesystem. It then retrieves and builds your dependencies, saving the version numbers or git commit SHAs in the <code>Cargo.lock</code> file. With that file checked in to source control, it’s easy to get repeatable builds using <em>exactly</em> those same dependencies, so you don’t suffer from issues with others trying to build your project with slightly different versions of the dependencies. Pretty neat.</p>
+<p><strong>Cargo.toml</strong></p>
+<pre><code>[dependencies.image]
+git = &quot;https://github.com/PistonDevelopers/image&quot;</code></pre>
+<p><strong>Cargo.lock</strong></p>
+<pre><code>[[package]]
+name = &quot;image&quot;
+version = &quot;0.2.0-alpha.10&quot;
+source = &quot;git+https://github.com/PistonDevelopers/image#5b589d98e53da920a28dbed8b3ea83452280cdd2&quot;
+dependencies = [
+ &quot;num 0.1.12 (git+https://github.com/rust-lang/num)&quot;,
+]</code></pre>
+<h4 id="support-for-testing">Support for Testing</h4>
+<p>Rust has some really cool built-in support for unit testing. This is great because every roadblock to writing tests makes them that much less likely to get written. In Rust, tests can be tagged with a <code>#[test]</code> attribute and added directly to the source file:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">impl</span> Vector <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-2" title="2">    <span class="kw">pub</span> <span class="kw">fn</span> length(&amp;<span class="kw">self</span>) -&gt; <span class="dt">f64</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-3" title="3">        (<span class="pp">Float::</span>powf(<span class="kw">self</span>.x, <span class="dv">2.0</span>) + <span class="pp">Float::</span>powf(<span class="kw">self</span>.y, <span class="dv">2.0</span>) + <span class="pp">Float::</span>powf(<span class="kw">self</span>.z, <span class="dv">2.0</span>)).sqrt()</a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="op">}</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="at">#[</span>test<span class="at">]</span></a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="kw">fn</span> test_vector_length() <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    <span class="kw">let</span> subject = Vector<span class="op">{</span> x: <span class="dv">1.0</span>, y: <span class="dv">1.0</span>, z: <span class="dv">1.0</span> <span class="op">}</span>;</a>
+<a class="sourceLine" id="cb3-10" title="10">    <span class="pp">assert_eq!</span>(subject.length(), (<span class="dv">3.0</span> <span class="kw">as</span> <span class="dt">f64</span>).sqrt());</a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="op">}</span></a></code></pre></div>
+<p>Once you’ve set up your project with Cargo, tests are easy to run:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb4-1" title="1">$ <span class="ex">cargo</span> test</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="ex">Compiling</span> rustray v0.0.1 (file:///Users/ndreynolds/repos/rustray)</a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="ex">Running</span> target/rustray-7f062fec34db6a8c</a>
+<a class="sourceLine" id="cb4-4" title="4"></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="ex">running</span> 1 test</a>
+<a class="sourceLine" id="cb4-6" title="6"><span class="bu">test</span> test_vector_length ... ok</a>
+<a class="sourceLine" id="cb4-7" title="7"></a>
+<a class="sourceLine" id="cb4-8" title="8"><span class="bu">test</span> result: ok. 1 passed<span class="kw">;</span> <span class="ex">0</span> failed<span class="kw">;</span> <span class="ex">0</span> ignored<span class="kw">;</span> <span class="ex">0</span> measured</a></code></pre></div>
+<h4 id="safety-vs.-flexibility">Safety vs. Flexibility</h4>
+<p>Every language seems to make its own trade-offs between safety (protecting the programmer from him or herself) and flexibility (which allows you to do useful things). The protections that prevent you from unsafe memory access or type errors always come at the cost of some flexibility.</p>
+<p>With C, you’re free to do whatever you want to your bits. If GCC doesn’t like the types you’ve assigned, you can always cast your way out of it—future segmentation faults notwithstanding. Haskell is on the other end of the spectrum. Its rigid type system protects you from all sorts of silly mistakes, but its functional purity makes normally simple things like printing to stdout or getting a random number considerably more difficult.</p>
+<p>Rust seems to aim for somewhere in the middle of the two extremes. I think one of the clear goals of Rust is to provide a safer choice for the sort of systems programming that C or C++ is typically used for. One way to achieve safety is to prevent the programmer from doing anything useful, but I don’t think that’s the case here.</p>
+<p>Rust encourages safety by providing reasonable defaults, but there’s usually an escape hatch if you need to do something not-so-safe (which can happen every now and then in the real world). By default, variable bindings are immutable, which means any mutation must be made explicit.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb5-1" title="1"><span class="co">// Variable bindings are immutable by default:</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="kw">let</span> x = <span class="dv">42</span>;</a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="co">// x += 1;   &lt;-- Can&#39;t do this</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="co">// But if you later decide you need a mutable binding, you have that option:</span></a>
+<a class="sourceLine" id="cb5-6" title="6"><span class="kw">let</span> <span class="kw">mut</span> y = <span class="dv">42</span>;</a>
+<a class="sourceLine" id="cb5-7" title="7">y += <span class="dv">1</span>;</a></code></pre></div>
+<p>Rust also forgoes null pointers and encourages an <a href="http://doc.rust-lang.org/std/option/index.html">Option</a> type (similar to Swift’s optional and Haskell’s Maybe monad) to represent a value that may be absent. In languages like Java, null pointers often mean null pointer exceptions. With an optional type, the compiler can enforce that you handle both scenarios (i.e., value presence <em>and</em> absence). In my project, one example of this was checking for an intersection when tracing a ray. An intersection only occurs if there’s an object in the ray’s traced path, so it may be absent:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb6-1" title="1"><span class="co">// Matches on an Option&lt;Intersection&gt;</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">match</span> <span class="kw">self</span>.find_intersection(ray) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="cn">Some</span>(isect) =&gt; <span class="kw">self</span>.get_shade(isect, depth),</a>
+<a class="sourceLine" id="cb6-4" title="4">  <span class="cn">None</span>        =&gt; <span class="pp">Pixel::</span>black()</a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="op">}</span></a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="co">// You can also use `unwrap`, which fails if the value is None.</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="kw">let</span> isect : Intersection = <span class="kw">self</span>.find_intersection(ray).unwrap();</a></code></pre></div>
+<h3 id="the-bad">The Bad</h3>
+<p>There were a few things I didn’t like about Rust. I’m sure most of these are just due to my inexperience with the language or Rust being a relatively new language.</p>
+<h4 id="unstable-apis">Unstable APIs</h4>
+<p>Rust is still in alpha and much of the standard API is currently marked as unstable. This means that—for now at least—every time you upgrade to the latest nightly, there’s a pretty good chance that your code will no longer compile. I’ve gone through this a few times with my ray tracer and spent a few hours moving to new APIs each time (for example, <code>serialize</code> to <code>rustc-serialize</code>). The other issue this presents is that a lot of the 3rd-party tutorials and example code out there won’t compile with the latest compiler.</p>
+<p>The good news is that this is supposed to change soon with the <a href="http://blog.rust-lang.org/2015/02/13/Final-1.0-timeline.html">1.0 release</a>.</p>
+<h4 id="steep-learning-curve">Steep Learning Curve</h4>
+<p>One of the trade-offs made in exchange for all the nice things about Rust is that it takes a while to get off the ground. For me at least, it’s not a language like Python or Ruby that you can start making useful things with on your first day. Using Rust effectively is predicated on having a good understanding of the language. As a beginner, I struggled with compiler error messages that seemed cryptic taken out of context (mostly due to borrowing or ownership problems), but once I’d read more of the official book, they did start to make more sense. Moreover, like Haskell, Rust has a powerful type system and gives you a lot of rope to hang yourself with. I got stuck a few times when trying to define and deserialize a polymorphic “shape” type.</p>
+<h4 id="lifetime-syntax">Lifetime Syntax</h4>
+<p>I think Rust generally has pretty nice syntax. I like its Ruby-style closures (<code>|x| x * x</code>). While I like the ownership paradigm, I’m not sold on the syntax for defining lifetimes. The terse <code>a</code>, <code>b</code>, <code>c</code> identifiers combined with the borrowed and mutable symbols can start to feel like reading and writing hieroglyphics:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode rust"><code class="sourceCode rust"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">fn</span> foobar&lt;<span class="ot">&#39;a</span>, <span class="ot">&#39;b</span>&gt;(x1: &amp;<span class="kw">mut</span> Foo&lt;<span class="ot">&#39;a</span>&gt;, y1: &amp;<span class="ot">&#39;a</span> Bar, x2: &amp;<span class="kw">mut</span> Foo&lt;<span class="ot">&#39;b</span>&gt;, y2: &amp;<span class="ot">&#39;b</span> Bar) <span class="op">{</span></a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="co">// ...</span></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="op">}</span></a></code></pre></div>
+<p>Sure, I imagine this will get easier to read with time, but I wouldn’t mind some Java-style verbosity here.</p>
+<h3 id="wrapping-up">Wrapping Up</h3>
+<p>I was going to add a “The Ugly” section to complete the trifecta, but my experience with Rust has actually been a really pleasant one. I’m sure the API stability and documentation will only improve with time.</p>
+<p>With that said, I don’t think Rust is a good general purpose programming language. I don’t plan to use Rust for web programming any time soon. When it comes to rapid development, I think the extra cognitive overhead in dealing with ownership and complexities like <code>String</code> vs. <code>&amp;str</code> make it hard sell against something like Ruby. But for problems in Rust’s wheelhouse—like system tools or operating systems or media decoders—where you need speed and safety, it’s a really great tool to have.</p>]]></description>
+    <pubDate>Tue, 10 Feb 2015 00:00:00 UT</pubDate>
+    <guid>https://ndreynolds.com/posts/2015-02-10-rust-first-impressions.html</guid>
+    <dc:creator>Nick Reynolds</dc:creator>
+</item>
+<item>
+    <title>Getting AngularJS and Rails talking</title>
+    <link>https://ndreynolds.com/posts/2015-01-31-getting-angular-and-rails-talking.html</link>
+    <description><![CDATA[<p>In this post, I want to explore a few of the ways to exchange data between a Rails app and an AngularJS module—looking at the pros and cons of each approach. While Angular sees a lot of usage in single-page applications (SPAs), I’ve found it just as useful for enhancing certain pages of a Rails application with more dynamic interfaces, while sticking to plain, scaffoldable CRUD screens for the rest of the app.</p>
+<!--more-->
+<p>With this approach, it doesn’t make sense to kick HAML to the curb, turn your Rails app into a JSON API, and render everything on the client side. Rails may not be the new kid on the block anymore, but it has a lot of mature gems that make putting together a complex site a breeze.</p>
+<p>With that in mind, it’s not always clear how best to combine the two technologies:</p>
+<ul>
+<li>When do you use Angular templates and when do you stick with HAML/ERB?</li>
+<li>How do you pass the data from the Rails side to your Angular controllers?</li>
+</ul>
+<h3 id="json-endpoints-in-the-rails-controller">JSON endpoints in the Rails controller</h3>
+<p>The first approach is to provide a JSON format for the resource in your controller. Imagine we wanted to implement client-side filtering of a short list of items in a store’s inventory. We can easily add a JSON format to the index action:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># app/controllers/items_controller.rb</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">class</span> <span class="dt">ItemsController</span> &lt; <span class="dt">ApplicationController</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">def</span> index</a>
+<a class="sourceLine" id="cb1-4" title="4">    <span class="ot">@items</span> = <span class="dt">Item</span>.all</a>
+<a class="sourceLine" id="cb1-5" title="5">    respond_to <span class="kw">do</span> |format|</a>
+<a class="sourceLine" id="cb1-6" title="6">      format.html <span class="co"># index.html.erb</span></a>
+<a class="sourceLine" id="cb1-7" title="7">      format.json { render <span class="st">json: </span><span class="ot">@items</span> }</a>
+<a class="sourceLine" id="cb1-8" title="8">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-9" title="9">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11">  <span class="co"># other actions...</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">end</span></a></code></pre></div>
+<p>Then from our HAML template, we’ll provide the Angular templating to dynamically render the items:</p>
+<pre class="haml"><code># app/views/items/index.html.haml
+%input(type=&quot;text&quot; ng-model=&quot;search&quot;)
+
+%table(ng-controller=&quot;ItemsController&quot;)
+  %thead
+    %tr
+      %th Name
+      %th Price
+  %tbody
+    %tr(ng-repeat=&quot;item in items | filter : search&quot;)
+      %td {{ item.name }}
+      %td {{ item.price | currency }}</code></pre>
+<p>Lastly, we’ll initialize the scope’s <code>items</code> array by requesting the data as JSON from the Rails server using the <code>$http</code> service.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb3-1" title="1"><span class="co">// app/assets/javascripts/items/items_controller.js</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">&#39;inventoryManager&#39;</span>)</a>
+<a class="sourceLine" id="cb3-3" title="3">  .<span class="at">controller</span>(<span class="st">&#39;ItemsController&#39;</span><span class="op">,</span> <span class="kw">function</span>($scope<span class="op">,</span> $http) <span class="op">{</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="va">$scope</span>.<span class="at">items</span> <span class="op">=</span> []<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="va">$http</span>.<span class="at">get</span>(<span class="st">&#39;/items.json&#39;</span>)</a>
+<a class="sourceLine" id="cb3-7" title="7">      .<span class="at">success</span>(<span class="kw">function</span>(data) <span class="op">{</span> <span class="va">$scope</span>.<span class="at">items</span> <span class="op">=</span> <span class="va">data</span>.<span class="at">items</span><span class="op">;</span> <span class="op">}</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>I like this approach, but it has a few issues:</p>
+<ul>
+<li>The items are requested in an additional HTTP request and we’re only handling the success case. We’ve introduced the possibility that the second request fails and the user sees an empty list of items. In a production app, we’d have to add error-handling for that case, which comes with some added complexity.</li>
+<li>It’s not always practical to create ad-hoc JSON routes for backend data. In this case, as <code>items</code> is clearly a collection of resources, it works well. If it were a list of filter options, adding a new JSON route becomes a little questionable.</li>
+</ul>
+<h3 id="nginit-and-nginitial">ngInit (and ngInitial)</h3>
+<p>When building forms, it’s common to want to show or hide an option or when something else is selected. Say our inventory app collects some basic information about how the item is taxed when an item is added. If the item is marked as taxable, the “tax rate” field should appear. If it is not taxable, the field should be hidden.</p>
+<p>The is definitely a job for Angular, but I’m not willing to give up <code>simple_form</code> in the process. Let’s see if we can make them play together.</p>
+<p>The item form partial will be used for both the <code>new</code> and <code>edit</code> actions. The show/hide behavior must work for both a new item as well as for an existing item that has already been marked as taxable.</p>
+<p>The <code>ngInit</code> directive evaluates an expression in the current scope. After assigning the taxable checkbox to the <code>$scope.taxable</code> via <code>ng-model</code>, we can use <code>ng-init</code> it to set its initial value:</p>
+<pre class="haml"><code># app/views/items/_form.html.haml
+%div(ng-controller=&quot;ItemFormController&quot;)
+  = simple_form_for @item do |f|
+    = f.input :taxable, &#39;ng-model&#39; =&gt; &#39;taxable&#39;, &#39;ng-init&#39; =&gt; &quot;taxable = #{@item.taxable.to_json}&quot;
+    = f.input :tax_rate, &#39;ng-if&#39; =&gt; &#39;taxable&#39;</code></pre>
+<p>Then from the Angular controller, there’s not much left to do:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="co">// app/assets/javascripts/items/item_form_controller.js</span></a>
+<a class="sourceLine" id="cb5-2" title="2"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">&#39;inventoryViewer&#39;</span>)</a>
+<a class="sourceLine" id="cb5-3" title="3">  .<span class="at">controller</span>(<span class="st">&#39;ItemFormController&#39;</span><span class="op">,</span> <span class="kw">function</span>($scope<span class="op">,</span> $http) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-4" title="4">    <span class="co">// We don&#39;t need to add any code here for the above to work.</span></a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>While this a decent strategy for simple use cases like above, it’s easy to abuse and mixing Ruby and Angular templates can get ugly. A slightly cleaner approach is to use something like the <code>ngInitial</code> directive from <a href="http://stackoverflow.com/a/17823590">this StackOverflow answer</a>. This directive sets the initial value of the <code>$scope</code> variable using the <code>value</code> attribute, which will be set automatically by the form helper. I’ve slightly modified the directive below to also handle checkbox inputs:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb6-1" title="1"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">&#39;inventoryManager&#39;</span>).<span class="at">directive</span>(<span class="st">&#39;ngInitial&#39;</span><span class="op">,</span> <span class="kw">function</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-2" title="2">  <span class="cf">return</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-3" title="3">    <span class="dt">restrict</span><span class="op">:</span> <span class="st">&#39;A&#39;</span><span class="op">,</span></a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="dt">controller</span><span class="op">:</span> [</a>
+<a class="sourceLine" id="cb6-5" title="5">      <span class="st">&#39;$scope&#39;</span><span class="op">,</span> <span class="st">&#39;$element&#39;</span><span class="op">,</span> <span class="st">&#39;$attrs&#39;</span><span class="op">,</span> <span class="st">&#39;$parse&#39;</span><span class="op">,</span> <span class="kw">function</span>($scope<span class="op">,</span> $element<span class="op">,</span> $attrs<span class="op">,</span> $parse) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7">        <span class="kw">function</span> <span class="at">parseVal</span>() <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-8" title="8">          <span class="cf">if</span> (<span class="va">$attrs</span>.<span class="at">type</span> <span class="op">===</span> <span class="st">&#39;checkbox&#39;</span>) <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-9" title="9">            <span class="cf">return</span> <span class="op">!!</span><span class="va">$attrs</span>.<span class="at">checked</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-10" title="10">          <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb6-11" title="11">            <span class="cf">return</span> <span class="va">$attrs</span>.<span class="at">value</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-12" title="12">          <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-13" title="13">        <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-14" title="14"></a>
+<a class="sourceLine" id="cb6-15" title="15">        <span class="kw">var</span> getter<span class="op">,</span> setter<span class="op">,</span> val<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-16" title="16">        val <span class="op">=</span> <span class="va">$attrs</span>.<span class="at">ngInitial</span> <span class="op">||</span> <span class="at">parseVal</span>()<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-17" title="17">        getter <span class="op">=</span> <span class="at">$parse</span>(<span class="va">$attrs</span>.<span class="at">ngModel</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-18" title="18">        setter <span class="op">=</span> <span class="va">getter</span>.<span class="at">assign</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb6-19" title="19">        <span class="at">setter</span>($scope<span class="op">,</span> val)<span class="op">;</span></a>
+<a class="sourceLine" id="cb6-20" title="20">      <span class="op">}</span></a>
+<a class="sourceLine" id="cb6-21" title="21">    ]</a>
+<a class="sourceLine" id="cb6-22" title="22">  <span class="op">};</span></a>
+<a class="sourceLine" id="cb6-23" title="23"><span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>It can then be used in the above HAML view like so:</p>
+<pre class="haml"><code># app/views/items/_form.html.haml
+%div(ng-controller=&quot;ItemFormController&quot;)
+  = simple_form_for @item do |f|
+    = f.input :taxable, input_html: { &#39;ng-model&#39; =&gt; &#39;taxable&#39;, &#39;ng-initial&#39; =&gt; &#39;&#39; }
+    = f.input :tax_rate, input_html: { &#39;ng-if&#39; =&gt; &#39;taxable&#39; }</code></pre>
+<p>(Unfortunately, I don’t know of a cleaner way to define valueless attributes.)</p>
+<h3 id="using-script-tags">Using script tags</h3>
+<p>When mixing Backbone.js and Rails, it’s common to <a href="http://backbonejs.org/#FAQ-bootstrap">bootstrap Backbone models and collections</a> from a script tag at the bottom of the page. It’s possible to do something similar in Angular by putting the data somewhere in the global scope and accessing it from the Angular controller.</p>
+<pre class="haml"><code># app/views/items/index.html.haml
+:javascript
+  window.items = #{@items.to_json};</code></pre>
+<div class="sourceCode" id="cb9"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb9-1" title="1"><span class="co">// app/assets/javascripts/items/items_controller.js</span></a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">&#39;inventoryManager&#39;</span>)</a>
+<a class="sourceLine" id="cb9-3" title="3">  .<span class="at">controller</span>(<span class="st">&#39;ItemsController&#39;</span><span class="op">,</span> <span class="kw">function</span>($scope) <span class="op">{</span></a>
+<a class="sourceLine" id="cb9-4" title="4">    <span class="va">$scope</span>.<span class="at">items</span> <span class="op">=</span> <span class="va">window</span>.<span class="at">items</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb9-5" title="5">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>While this is a bit simpler than requesting the data with the <code>$http</code> service and does work quite well, using global variables means the angular app loses its nice encapsulation, which can make testing problematic. Global variables also of course come with problems of their own.</p>
+<h3 id="json-data-attributes">JSON data attributes</h3>
+<p>Another approach is to render the data as JSON to data attributes. By adding a <code>data-items</code> attribute to the element with the <code>ng-controller</code> attribute, you can easily access the data with an injected <code>$element</code> dependency.</p>
+<pre class="haml"><code># app/views/items/index.html.haml
+%ul{ &#39;ng-controller&#39; =&gt; &#39;ItemsController&#39;, &#39;data-items&#39; =&gt; items.to_json }
+  %li(ng-repeat=&quot;item in items&quot;) {{ item.name }}</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb11-1" title="1"><span class="co">// app/assets/javascripts/items/items_controller.js</span></a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="va">angular</span>.<span class="at">module</span>(<span class="st">&#39;inventoryManager&#39;</span>)</a>
+<a class="sourceLine" id="cb11-3" title="3">  .<span class="at">controller</span>(<span class="st">&#39;ItemsController&#39;</span><span class="op">,</span> <span class="kw">function</span>($scope<span class="op">,</span> $element) <span class="op">{</span></a>
+<a class="sourceLine" id="cb11-4" title="4">    <span class="va">$scope</span>.<span class="at">items</span> <span class="op">=</span> <span class="va">$element</span>.<span class="at">data</span>(<span class="st">&#39;items&#39;</span>)<span class="op">;</span></a>
+<a class="sourceLine" id="cb11-5" title="5">  <span class="op">}</span>)<span class="op">;</span></a></code></pre></div>
+<p>This is my favorite approach in cases where a JSON endpoint doesn’t make sense. The <code>$element</code> dependency can be mocked, so the code is easily-testable. It doesn’t rely on global variables, so the app is still nicely encapsulated. On top of that, we also avoid making another request.</p>]]></description>
+    <pubDate>Sat, 31 Jan 2015 00:00:00 UT</pubDate>
+    <guid>https://ndreynolds.com/posts/2015-01-31-getting-angular-and-rails-talking.html</guid>
+    <dc:creator>Nick Reynolds</dc:creator>
+</item>
+<item>
+    <title>Testing Rails apps with RSpec: Part II</title>
+    <link>https://ndreynolds.com/posts/2015-01-20-rspec-intro-part2.html</link>
+    <description><![CDATA[<p>In this two-part series, I cover testing a Rails application using RSpec and some other popular gems. If you missed Part 1, you can catch up here.</p>
+<!--more-->
+<p>In Part 2, with the setup out of the way, we’ll dive into writing tests for the various components of a Rails app.</p>
+<p>Before diving in, I will say that some of this may be a bit opinionated. When I’m testing a Rails app, my goal is to get the most bang for my buck—that is, the most test coverage for the fewest lines of test code. If you find that a test requiring extensive mocking or brittle networking logic begins taking up more than its share of your development time, in my book it’s fine to just <code>git rm</code> it and move on. Likewise, while getting to 100% coverage is a noble goal, it isn’t always as realistic (in the face of schedule and budget constraints) or as helpful (think: future refactoring) as it might seem. The real objective isn’t to hit some arbitrary percentage—it’s to make your app more reliable for your users and prevent regressions as you develop it.</p>
+<h2 id="overview">Overview</h2>
+<p>In this article, we’ll write tests that touch on each part of the Rails MVC architecture:</p>
+<dl>
+<dt>Model Specs</dt>
+<dd>Test your Rails models—scopes, validations, custom methods
+</dd>
+<dd><code>spec/models/post_spec.rb</code>
+</dd>
+<dt>Controller Specs</dt>
+<dd>Test your Rails controllers—CRUD, requests, sessions, param shuffling, formats
+</dd>
+<dd><code>spec/controllers/posts_controller_spec.rb</code>
+</dd>
+<dt>Feature (a.k.a. Acceptance) Specs</dt>
+<dd>Test your Rails app from the browser as a user—use cases, interactions, and maybe even some JavaScript
+</dd>
+<dd>`spec/features/post_management_spec.rb
+</dd>
+</dl>
+<p>In addition to those, while not covered here, you might also decide to write unit tests for other parts of your app:</p>
+<ul>
+<li>library code</li>
+<li>helpers and concerns</li>
+<li>JavaScript</li>
+</ul>
+<h2 id="model-specs">Model specs</h2>
+<p>If you’re familiar with unit testing, testing Rails models isn’t much different. Model tests—unlike controller and feature tests—don’t require much environment setup or mocking. This is one of the reasons it’s a good idea to move logic out of the controller and into the model (or maybe a service object)—it’s much easier to test that way.</p>
+<p>In a model spec, I’ll generally have expectations for validations and any non-trivial class or instance methods. The goal of each example in a model spec is to verify the behavior of the method or validation. When thinking about what to test, we want to both make sure that it works in the normal case, as well as in certain exceptional cases. Consider some example “what-ifs” when a plain old Ruby method is called:</p>
+<ul>
+<li>If the method takes an argument, what happens if it’s nil?</li>
+<li>If the method takes an argument, what happens if the wrong type is passed or the argument is invalid in some other way (e.g., empty, wrong encoding)?</li>
+<li>If the method has any special behavior based on the arguments or instance state, what happens when that special behavior runs? Does it work correctly?</li>
+<li>If a number is to be divided by another number, what if the divisor is 0?</li>
+</ul>
+<p>While we won’t (and can’t) think of everything that could go wrong, it’s a good idea to touch on common failure points.</p>
+<p>In these examples, imagine we’re building an app to compare cars, trucks, and SUVs. To that end, we’ll have a <code>Vehicle</code> model with attributes like the vehicle’s make, model, year and style.</p>
+<h3 id="defining-factories">Defining Factories</h3>
+<p>To make it easier to generate instances of our model in specs, we’ll create factories using the <code>factory_girl</code> gem. Here’s an example factory definition for our <code>Vehicle</code> model that we’ll use in future examples:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># spec/factories/vehicles.rb</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="dt">FactoryGirl</span>.define <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  factory <span class="st">:vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    model   <span class="st">&#39;Prius&#39;</span></a>
+<a class="sourceLine" id="cb1-5" title="5">    make    <span class="st">&#39;Toyota&#39;</span></a>
+<a class="sourceLine" id="cb1-6" title="6">    year    <span class="dv">2014</span></a>
+<a class="sourceLine" id="cb1-7" title="7">    style   <span class="st">&#39;Car&#39;</span></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9">    trait <span class="st">:truck</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-10" title="10">      model  <span class="st">&#39;F-150&#39;</span></a>
+<a class="sourceLine" id="cb1-11" title="11">      make   <span class="st">&#39;Ford&#39;</span></a>
+<a class="sourceLine" id="cb1-12" title="12">      style  <span class="st">&#39;Truck&#39;</span></a>
+<a class="sourceLine" id="cb1-13" title="13">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15">    trait <span class="st">:suv</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-16" title="16">      model  <span class="st">&#39;Escalade&#39;</span></a>
+<a class="sourceLine" id="cb1-17" title="17">      make   <span class="st">&#39;Cadilac&#39;</span></a>
+<a class="sourceLine" id="cb1-18" title="18">      style  <span class="st">&#39;SUV&#39;</span></a>
+<a class="sourceLine" id="cb1-19" title="19">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-20" title="20">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb1-21" title="21"><span class="kw">end</span></a></code></pre></div>
+<p>In the factory definition above, we describe how to create a vehicle by assigning some default values for each attribute. To use the new factory, we’ll just need to call <code>build(:vehicle)</code> (to make an instance) or <code>create(:vehicle)</code> (to make an instance and persist it to the data store) inside the specs. More on that in a moment.</p>
+<p>We also define two <strong>traits</strong>, one for trucks and one for SUVs. Traits allow you to easily apply a group of attributes to your factory. How you use them is largely up to you. In short, traits let us write this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb2-1" title="1">create(<span class="st">:vehicle</span>, <span class="st">:truck</span>)</a></code></pre></div>
+<p>…instead of this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb3-1" title="1">create(<span class="st">:vehicle</span>, <span class="st">model: &#39;F-150&#39;</span>, <span class="st">make: &#39;Ford&#39;</span>, <span class="st">style: &#39;Truck&#39;</span>)</a></code></pre></div>
+<p>One approach you might also consider is generating random data in your factories. This had the advantage of making sure your app works with a broader range of inputs. The <code>ffaker</code> gem is great for this purpose. In essence, <code>ffaker</code> generates fake data for a number of common fields like names, phone numbers, addresses, and as it happens: vehicles. Here’s how we might re-define the vehicle factory with <code>ffaker</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb4-1" title="1"><span class="co"># spec/factories/vehicles.rb</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="dt">FactoryGirl</span>.define <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  factory <span class="st">:vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    model   { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.model }</a>
+<a class="sourceLine" id="cb4-5" title="5">    make    { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.make  }</a>
+<a class="sourceLine" id="cb4-6" title="6">    year    { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.year  }</a>
+<a class="sourceLine" id="cb4-7" title="7">    style   <span class="st">&#39;Car&#39;</span></a>
+<a class="sourceLine" id="cb4-8" title="8">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb4-9" title="9"><span class="kw">end</span></a></code></pre></div>
+<p>Notice that we need to use blocks for these calls so that they’re reevaluated each time. To be completely correct here, you could add additional logic to ensure that the make, model, year and style all agree. With this definition, we might generate a 1950 Tesla F-150 car, but for some tests that’s okay. Here’s how you could go improving this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb5-1" title="1">factory <span class="st">:vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-2" title="2">  model { <span class="dt">Faker</span>::<span class="dt">Vehicle</span>.model }</a>
+<a class="sourceLine" id="cb5-3" title="3">  make  { |vehicle| make_for_model(vehicle.model)  }</a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="kw">end</span></a></code></pre></div>
+<h3 id="testing-validations">Testing Validations</h3>
+<p>Imagine we’d like to require that all vehicles have a year. When users enter new vehicles without a year, validation should fail and they should be required to enter it in order to continue. To make sure that happens, we’ll need to ensure that our validation in the <code>Vehicle</code> model is working correctly.</p>
+<p>The model definition:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb6-1" title="1"><span class="co"># app/models/vehicle.rb</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="kw">class</span> <span class="dt">Vehicle</span> &lt; <span class="dt">ActiveRecord</span>::<span class="dt">Base</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  validates <span class="st">:year</span>, <span class="st">presence: </span><span class="dv">true</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="kw">end</span></a></code></pre></div>
+<p>The model spec:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb7-1" title="1"><span class="co"># spec/models/vehicle_spec.rb</span></a>
+<a class="sourceLine" id="cb7-2" title="2">require <span class="st">&#39;rails_helper&#39;</span></a>
+<a class="sourceLine" id="cb7-3" title="3"></a>
+<a class="sourceLine" id="cb7-4" title="4">describe <span class="dt">Vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-5" title="5">  it <span class="st">&#39;has a valid factory&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-6" title="6">    expect(build(<span class="st">:vehicle</span>)).to be_valid</a>
+<a class="sourceLine" id="cb7-7" title="7">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9">  it <span class="st">&#39;is invalid without a year&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-10" title="10">    expect(build(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>)).to_not be_valid</a>
+<a class="sourceLine" id="cb7-11" title="11">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-12" title="12"><span class="kw">end</span></a></code></pre></div>
+<p>In case you’re not familiar with RSpec’s DSL, we’ll take a quick detour and cover the three important pieces here:</p>
+<ul>
+<li><code>describe</code> defines a group of examples and takes the entity (e.g., model, method, etc.) being specified.</li>
+<li><code>it</code> defines an example and takes a description of the example. You’ll want to phrase the description in a way that it reads like English (e.g., <code>it 'raises an exception when...'</code>).</li>
+<li><code>expect</code> makes an expectation (a.k.a. an assertion in other testing frameworks) about its argument. The <code>expect</code> method takes an object or block and is typically used with <code>to</code> or <code>to_not</code> and a matcher (e.g., <code>be_valid</code>, <code>eq(42)</code>, or <code>raise_error</code>).</li>
+</ul>
+<p>Going back to the example spec, our first example (“it has a valid factory”) is the control. We want to make sure that a model without a year is invalid, but first we need to make sure that there are any valid inputs at all. Here we verify that the model generated by our factory is valid.</p>
+<p>In the second example, we build another model, but this time override the year and set it to nil. With the year is missing, we expect the model to be invalid.</p>
+<h3 id="testing-methods">Testing Methods</h3>
+<p>Imagine our app will display the average fuel-efficiency (MPG) for each vehicle based on user-submitted values. There’s now an <code>MpgSubmission</code> model and a <code>has_many</code> relationship defined in the <code>Vehicle</code> model. To quickly get the average MPG for a vehicle, we’ll add an <code>average_mpg</code> method to the <code>Vehicle</code> model that will average the MPG submissions.</p>
+<p>To make it interesting, we’ll add an additional constraint: if there are fewer than 10 submissions, the method should return nil to indicate insufficient data.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb8-1" title="1"><span class="co"># app/models/vehicle.rb</span></a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="kw">class</span> <span class="dt">Vehicle</span></a>
+<a class="sourceLine" id="cb8-3" title="3">  has_many <span class="st">:mpg_submissions</span></a>
+<a class="sourceLine" id="cb8-4" title="4"></a>
+<a class="sourceLine" id="cb8-5" title="5">  <span class="dt">MPG_SUBMISSIONS_NEEDED</span> = <span class="dv">10</span></a>
+<a class="sourceLine" id="cb8-6" title="6"></a>
+<a class="sourceLine" id="cb8-7" title="7">  <span class="kw">def</span> average_mpg</a>
+<a class="sourceLine" id="cb8-8" title="8">    <span class="kw">if</span> mpg_submissions.count &gt;= <span class="dt">MPG_SUBMISSIONS_NEEDED</span></a>
+<a class="sourceLine" id="cb8-9" title="9">      mpg_submissions.average(<span class="st">:mpg</span>)</a>
+<a class="sourceLine" id="cb8-10" title="10">    <span class="kw">else</span></a>
+<a class="sourceLine" id="cb8-11" title="11">      <span class="dv">nil</span></a>
+<a class="sourceLine" id="cb8-12" title="12">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb8-13" title="13">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb8-14" title="14"><span class="kw">end</span></a></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb9-1" title="1"><span class="co"># spec/models/vehicle_spec.rb</span></a>
+<a class="sourceLine" id="cb9-2" title="2">require <span class="st">&#39;rails_helper&#39;</span></a>
+<a class="sourceLine" id="cb9-3" title="3"></a>
+<a class="sourceLine" id="cb9-4" title="4">describe <span class="dt">Vehicle</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb9-5" title="5">  subject { create(<span class="st">:vehicle</span>) }</a>
+<a class="sourceLine" id="cb9-6" title="6"></a>
+<a class="sourceLine" id="cb9-7" title="7">  describe <span class="st">&#39;#average_mpg&#39;</span></a>
+<a class="sourceLine" id="cb9-8" title="8">    it <span class="st">&#39;returns nil if there are fewer submissions than required&#39;</span></a>
+<a class="sourceLine" id="cb9-9" title="9">      <span class="dv">9</span>.times.each { create(<span class="st">:mpg_submission</span>, <span class="st">mpg: </span><span class="dv">25</span>, <span class="st">vehicle: </span>subject) }</a>
+<a class="sourceLine" id="cb9-10" title="10">      expect(subject.average_mpg).to be_nil</a>
+<a class="sourceLine" id="cb9-11" title="11">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb9-12" title="12"></a>
+<a class="sourceLine" id="cb9-13" title="13">    it <span class="st">&#39;returns the average if there are enough submissions&#39;</span></a>
+<a class="sourceLine" id="cb9-14" title="14">      <span class="dv">5</span>.times.each { create(<span class="st">:mpg_submission</span>, <span class="st">mpg: </span><span class="dv">25</span>, <span class="st">vehicle: </span>subject) }</a>
+<a class="sourceLine" id="cb9-15" title="15">      <span class="dv">5</span>.times.each { create(<span class="st">:mpg_submission</span>, <span class="st">mpg: </span><span class="dv">30</span>, <span class="st">vehicle: </span>subject) }</a>
+<a class="sourceLine" id="cb9-16" title="16">      expect(subject.average_mpg).to eq(<span class="fl">27.5</span>)</a>
+<a class="sourceLine" id="cb9-17" title="17">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb9-18" title="18">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb9-19" title="19"><span class="kw">end</span></a></code></pre></div>
+<p>I like to create a <code>describe</code> block for each method that will be tested, using the syntax <code>#instance_method</code> and <code>.class_method</code> to indicate what is being described. This helps with quickly associating example groups with the source code being tested.</p>
+<p>In the above spec, we test both sides of the if-expression—an example for the case that there are fewer MPG submissions than required and an example for the case that the requirement is met. In the latter case, we also verify that the average agrees with our test data.</p>
+<p>While there may be other scenarios we could test here, these examples cover this method fairly well—all branches are tested and there are no obvious nil issues (<code>ActiveRecord::Calculations.average</code> will handle nil <code>mpg</code> values and we’d likely have a database constraint to eliminate that possibility anyway).</p>
+<h2 id="controller-specs">Controller specs</h2>
+<p>If most of the logic is kept out of your controllers, writing controller specs is easy. Controller specs test your Rails application at the request level. Here are some of the questions you should ask when testing controller actions:</p>
+<ul>
+<li>If the action should render a view, does it do so?</li>
+<li>If the action should redirect to another action, does it do so?</li>
+<li>If the action creates, updates, or deletes a resource, does this functionality work?
+<ul>
+<li>Specifically, how does creating, updating or deleting items affect the number of records after the request is completed?</li>
+</ul></li>
+<li>If the session and/or cookie should be updated, is that working correctly?</li>
+<li>If the request takes or requires certain parameters, what happens if these are missing or invalid?</li>
+<li>If access to the action is restricted, does the authentication and authorization logic work as expected?</li>
+<li>Does the action return the correct status code? (important for json format)</li>
+</ul>
+<div class="sourceCode" id="cb10"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb10-1" title="1"><span class="co"># app/controllers/vehicles_controller.rb</span></a>
+<a class="sourceLine" id="cb10-2" title="2"><span class="kw">class</span> <span class="dt">VehiclesController</span> &lt; <span class="dt">ApplicationController</span></a>
+<a class="sourceLine" id="cb10-3" title="3">  <span class="kw">def</span> create</a>
+<a class="sourceLine" id="cb10-4" title="4">    <span class="ot">@vehicle</span> = <span class="dt">Vehicle</span>.new(vehicle_params)</a>
+<a class="sourceLine" id="cb10-5" title="5"></a>
+<a class="sourceLine" id="cb10-6" title="6">    respond_to <span class="kw">do</span> |format|</a>
+<a class="sourceLine" id="cb10-7" title="7">      <span class="kw">if</span> <span class="ot">@vehicle</span>.save</a>
+<a class="sourceLine" id="cb10-8" title="8">        format.html { redirect_to vehicle_path(<span class="ot">@vehicle</span>), <span class="st">notice: &#39;Vehicle was successfully created.&#39;</span> }</a>
+<a class="sourceLine" id="cb10-9" title="9">        format.json { render <span class="st">json: </span><span class="ot">@vehicle</span>, <span class="st">status: :created</span>, <span class="st">location: </span><span class="ot">@vehicle</span> }</a>
+<a class="sourceLine" id="cb10-10" title="10">      <span class="kw">else</span></a>
+<a class="sourceLine" id="cb10-11" title="11">        format.html { render <span class="st">action: &#39;new&#39;</span> }</a>
+<a class="sourceLine" id="cb10-12" title="12">        format.json { render <span class="st">json: </span><span class="ot">@vehicle</span>.errors, <span class="st">status: :unprocessable_entity</span> }</a>
+<a class="sourceLine" id="cb10-13" title="13">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb10-14" title="14">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb10-15" title="15">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb10-16" title="16"></a>
+<a class="sourceLine" id="cb10-17" title="17">  <span class="co"># of course you&#39;d probably define other actions as well...</span></a>
+<a class="sourceLine" id="cb10-18" title="18"><span class="kw">end</span></a></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb11-1" title="1"><span class="co"># spec/controllers/vehicles_controller_spec.rb</span></a>
+<a class="sourceLine" id="cb11-2" title="2">require <span class="st">&#39;rails_helper&#39;</span></a>
+<a class="sourceLine" id="cb11-3" title="3"></a>
+<a class="sourceLine" id="cb11-4" title="4">describe <span class="dt">VehiclesController</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-5" title="5">  describe <span class="st">&#39;POST #create&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-6" title="6">    context <span class="st">&#39;html&#39;</span></a>
+<a class="sourceLine" id="cb11-7" title="7">      context <span class="st">&#39;with valid attributes&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-8" title="8">        it <span class="st">&#39;creates the vehicle&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-9" title="9">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>)</a>
+<a class="sourceLine" id="cb11-10" title="10">          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb11-11" title="11">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-12" title="12"></a>
+<a class="sourceLine" id="cb11-13" title="13">        it <span class="st">&#39;redirects to the &quot;show&quot; action for the new vehicle&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-14" title="14">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>)</a>
+<a class="sourceLine" id="cb11-15" title="15">          expect(response).to redirect_to <span class="dt">Vehicle</span>.first</a>
+<a class="sourceLine" id="cb11-16" title="16">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-17" title="17">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-18" title="18"></a>
+<a class="sourceLine" id="cb11-19" title="19">      context <span class="st">&#39;with invalid attributes&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-20" title="20">        it <span class="st">&#39;does not create the vehicle&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-21" title="21">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>)</a>
+<a class="sourceLine" id="cb11-22" title="22">          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb11-23" title="23">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-24" title="24"></a>
+<a class="sourceLine" id="cb11-25" title="25">        it <span class="st">&#39;re-renders the &quot;new&quot; view&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-26" title="26">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>)</a>
+<a class="sourceLine" id="cb11-27" title="27">          expect(response).to render_template <span class="st">:new</span></a>
+<a class="sourceLine" id="cb11-28" title="28">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-29" title="29">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-30" title="30">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-31" title="31"></a>
+<a class="sourceLine" id="cb11-32" title="32">    context <span class="st">&#39;json&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-33" title="33">      context <span class="st">&#39;with valid attributes&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-34" title="34">        it <span class="st">&#39;creates the vehicle&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-35" title="35">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>), format: <span class="st">:json</span></a>
+<a class="sourceLine" id="cb11-36" title="36">          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb11-37" title="37">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-38" title="38"></a>
+<a class="sourceLine" id="cb11-39" title="39">        it <span class="st">&#39;responds with 201&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-40" title="40">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>), format: <span class="st">:json</span></a>
+<a class="sourceLine" id="cb11-41" title="41">          expect(response.status).to eq(<span class="dv">201</span>)</a>
+<a class="sourceLine" id="cb11-42" title="42">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-43" title="43">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-44" title="44"></a>
+<a class="sourceLine" id="cb11-45" title="45">      context <span class="st">&#39;with invalid attributes&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-46" title="46">        it <span class="st">&#39;does not create the vehicle&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-47" title="47">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>), format: <span class="st">:json</span></a>
+<a class="sourceLine" id="cb11-48" title="48">          expect(<span class="dt">Vehicle</span>.count).to eq(<span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb11-49" title="49">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-50" title="50"></a>
+<a class="sourceLine" id="cb11-51" title="51">        it <span class="st">&#39;responds with 422&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb11-52" title="52">          post <span class="st">:create</span>, <span class="st">vehicle: </span>attributes_for(<span class="st">:vehicle</span>, <span class="st">year: </span><span class="dv">nil</span>), format: <span class="st">:json</span></a>
+<a class="sourceLine" id="cb11-53" title="53">          expect(response.status).to eq(<span class="dv">422</span>)</a>
+<a class="sourceLine" id="cb11-54" title="54">        <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-55" title="55">      <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-56" title="56">    <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-57" title="57">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb11-58" title="58"><span class="kw">end</span></a></code></pre></div>
+<p>There’s a lot going on in the above specs. We use the <code>context</code></p>
+<h2 id="feature-a.k.a-acceptance-specs">Feature (a.k.a, Acceptance) specs</h2>
+<p>Feature specs are a type of integration test. Whereas unit tests are concerned with individual components, integration tests focus on how they work together. An app with unit tests but no integration tests is like a pile of individually-tested car parts with no assurance that they can work together to make a drivable car.</p>
+<p>In that sense, feature specs are the place to ensure that all the pieces of your Rails app work together and achieve the functionality you built it for. In feature specs, we assume the role of the user and play out various scenarios. For example, some common scenarios in many applications:</p>
+<ul>
+<li>A user signs up for a new account.</li>
+<li>A user logs in to the site.</li>
+<li>A user submits a form (with or without all required fields).</li>
+<li>An admin manages content.</li>
+</ul>
+<p>To write feature specs for Rails, we’ll use Capybara, a Ruby gem which lets us automate the browser to interact with web pages like a user would—that is, by clicking, typing and selecting.</p>
+<p>The following is a basic feature spec for logging in to the site. We’ll visit the sign in url, fill in credentials, and submit the form. To verify that we were successful, we’ll then look for a success message afterwards.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb12-1" title="1"><span class="co"># spec/features/user_sign_in_spec.rb</span></a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3">require <span class="st">&#39;rails_helper&#39;</span></a>
+<a class="sourceLine" id="cb12-4" title="4"></a>
+<a class="sourceLine" id="cb12-5" title="5">feature <span class="st">&#39;User signs in&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-6" title="6">  scenario <span class="st">&#39;with valid credentials&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-7" title="7">    visit sign_in_path</a>
+<a class="sourceLine" id="cb12-8" title="8">    fill_in <span class="st">&#39;Username&#39;</span>, <span class="st">with: &#39;joe.example&#39;</span></a>
+<a class="sourceLine" id="cb12-9" title="9">    fill_in <span class="st">&#39;Password&#39;</span>, <span class="st">with: &#39;passw0rd&#39;</span></a>
+<a class="sourceLine" id="cb12-10" title="10">    click_on <span class="st">&#39;Sign In&#39;</span></a>
+<a class="sourceLine" id="cb12-11" title="11"></a>
+<a class="sourceLine" id="cb12-12" title="12">    expect(page).to have_content(<span class="st">&#39;You have successfully signed in!&#39;</span>)</a>
+<a class="sourceLine" id="cb12-13" title="13">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb12-14" title="14"><span class="kw">end</span></a></code></pre></div>
+<p>With feature specs, it’s important to maintain a certain level of abstraction. If you’ve written good model and controller specs, you don’t need to be concerned with the low-level details here. While we might take a cursory glance at the database to ensure that the expected change was actually made, we’re primarily concerned with the user seeing what they should be seeing. In this case: seeing is believing.</p>
+<h3 id="interacting-with-javascript">Interacting with JavaScript</h3>
+<p>It’s likely that at one point or another, your feature specs will need to interact with JavaScript-dependent functionality—maybe there’s a confirmation dialog that needs to be accepted or content that is loaded dynamically.</p>
+<p>Although Capybara’s default <code>Rack::Test</code> driver does not support JavaScript, it’s easy enough to switch to one that does for feature specs requiring it. You can read more about the available drivers <a href="https://github.com/jnicklas/capybara#drivers">here</a>. If you plan to run specs on a server without X11 (or an alternative) installed, PhantomJS via Poltergeist is a good choice.</p>
+<p>The below example, while contrived, demonstrates how expectations can be made about dynamic content, as well as how JavaScript code can be executed from the feature spec.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb13-1" title="1">feature <span class="st">&#39;User views dynamic Hello World message&#39;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb13-2" title="2">  it <span class="st">&#39;displays Hello World&#39;</span>, <span class="st">js: </span><span class="dv">true</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb13-3" title="3">    visit root_path</a>
+<a class="sourceLine" id="cb13-4" title="4">    page.execute_script <span class="st">&quot;document.write(&#39;Hello World!&#39;)&quot;</span></a>
+<a class="sourceLine" id="cb13-5" title="5">    expect(page).to have_content(<span class="st">&#39;Hello World!&#39;</span>)</a>
+<a class="sourceLine" id="cb13-6" title="6">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb13-7" title="7"><span class="kw">end</span></a></code></pre></div>
+<p>As an aside, trying to test JS-heavy apps from Capybara can unfortunately be a world of pain. As the setup typically involves multiple threads or processes—your Rails app being one and the browser being the other—it leads to all sorts of timing issues. Race conditions, driver differences, and random AJAX failures all conspire to make these tests brittle and hard to debug. I’ve started to avoid these types of tests altogether and rely instead on client-side testing with <a href="http://mochajs.org/">Mocha</a> and <a href="http://karma-runner.github.io/0.12/index.html">Karma</a> for JS-heavy pages.</p>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>One thing you may have noticed is that controller specs have a good deal of overlap with model and feature specs. While there are advantages to having controller specs, I’ve found that most things they test can be covered by feature specs. If you only have time for one or the other, go with feature specs. They prove that your app works in an actual browser—rather than just from a cURL client, which is as far as controller specs will get you.</p>
+<h2 id="more-resources">More Resources</h2>
+<ul>
+<li><a href="http://betterspecs.org/">Better Specs</a> — Best practices for RSpec. You may not always agree with the advice here, but I’ve generally found it to be pretty solid.</li>
+<li><a href="http://everydayrails.com/2012/03/12/testing-series-intro.html">Everyday Rails: How I learned to test my Rails applications</a> — a great series that goes more in depth than I could here.</li>
+<li><a href="http://robots.thoughtbot.com/tags/testing">Thoughtbot’s Blog</a> — Excellent posts on many of the concepts and technologies covered here with good advice on overcoming the various hurdles you’ll run up against.</li>
+</ul>]]></description>
+    <pubDate>Tue, 20 Jan 2015 00:00:00 UT</pubDate>
+    <guid>https://ndreynolds.com/posts/2015-01-20-rspec-intro-part2.html</guid>
+    <dc:creator>Nick Reynolds</dc:creator>
+</item>
+<item>
+    <title>Testing Rails apps with RSpec: Part I</title>
+    <link>https://ndreynolds.com/posts/2014-07-15-rspec-intro-part1.html</link>
+    <description><![CDATA[<p>In this two-part series, I’ll cover testing a Rails application—from how to get set up with the latest toolchain, to writing those first tests.</p>
+<!--more-->
+<p>In Part 1, I’ll look at how to set up and configure <a href="https://github.com/rspec/rspec-rails">RSpec 3</a> (with <a href="https://github.com/thoughtbot/factory_girl_rails">Factory Girl</a> and <a href="https://github.com/jnicklas/capybara">Capybara</a>) for a Rails 4 app, and how to generate and run your first specs. Next time, in Part 2, we’ll look at writing model, controller and feature specs.</p>
+<h2 id="but-first-why-write-tests">But first, why write tests?</h2>
+<p>I was initially very wary of unit-testing. While I knew that I needed to make sure the app worked, I was skeptical of time tradeoff. The first few tests can seem like more trouble than they’re worth, and quite honestly, those first few probably are more trouble than they’re worth. But after a while, writing tests becomes second nature. I think it can easily take less time to write automated tests than to manually test every feature before every release.</p>
+<p>It’s no silver bullet. There will probably still be bugs from scenarios you never thought to test. But even if they can’t catch every bug, tests provide you with confidence that your app works as intended on a basic level. This is all the more important if you didn’t write the app to begin with, or if you’re part of a big team—you won’t always know what effects your changes might have. There might be features you don’t even know about. Ultimately, a solid test suite means less to worry about for you, the developer, and with any luck, a more stable product for the user.</p>
+<h2 id="testing-a-rails-4-app-with-rspec-3">Testing a Rails 4 app with RSpec 3</h2>
+<p>I really like RSpec. If you’re more of a minimalist, you can always skip the extra gems and use the built-in minitest, but I like the additional features and clean DSL that RSpec provides. For example, to test that a variable is nil:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># minitest</span></a>
+<a class="sourceLine" id="cb1-2" title="2">assert_nil obj</a>
+<a class="sourceLine" id="cb1-3" title="3"></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="co"># RSpec</span></a>
+<a class="sourceLine" id="cb1-5" title="5">expect(obj).to be_nil</a></code></pre></div>
+<p>It’s a matter of taste, but I prefer RSpec’s more human-readable style. Here, we’ll use RSpec 3.0, which landed back in May, and brings a few new changes into the fold (See here for more info: <a href="http://myronmars.to/n/dev-blog/2014/05/notable-changes-in-rspec-3">Notable Changes in RSpec 3</a>).</p>
+<p>In addition to RSpec, we’ll also set up Factory Girl as a fixture replacement, Capybara for browser-level acceptance (a.k.a. integration) tests, and Database Cleaner for cleaning up between test scenarios.</p>
+<p>When you write tests, you’ll need test data. As a fixture replacement, <strong>Factory Girl</strong> helps you build instances of your models for use in test scenarios. This is accomplished through factories in which you define how to build the instances. Although it’s nothing you couldn’t do yourself with plain old ActiveRecord methods and some helper methods, Factory Girl provides a nice system for setting defaults (and then overriding them) that keeps a lot of boilerplate out of your code.</p>
+<p>Acceptance tests look at how the system as a whole functions. For a Rails app, that usually means typing and clicking on things in a web browser and seeing some sort of response. <strong>Capybara</strong> provides one DSL for automating various browsers to simulate user interactions with your app, which you can then make expectations about using RSpec. Because it provides a single interface to various browsers, it gives you the freedom to do things like use Selenium to run certain tests while using headless webkit to run others.</p>
+<p>By default, test scenarios are wrapped in a database transaction so that each scenario’s changes can be rolled back, so as to not cause side effects when running other scenarios later. But when using Capybara’s JavaScript driver, this causes some trouble, as these scenarios are run in another thread which doesn’t share the database connection, leading to unexpected behavior. To avoid headaches down the road, we’ll also use the <strong><code>database_cleaner</code></strong> gem to adjust the way the database cleanup is done. (See <a href="http://devblog.avdi.org/2012/08/31/configuring-database_cleaner-with-rails-rspec-capybara-and-selenium/">this post</a> for more details.)</p>
+<h2 id="configure-your-gemfile">Configure your Gemfile</h2>
+<p>Let’s get started. Assuming you’re working inside a new Rails 4 app, add the following to your <code>Gemfile</code> and then <code>bundle install</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb2-1" title="1">group <span class="st">:development</span>, <span class="st">:test</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  gem <span class="st">&#39;rspec-rails&#39;</span>, <span class="st">&#39;~&gt; 3.0.0&#39;</span></a>
+<a class="sourceLine" id="cb2-3" title="3">  gem <span class="st">&#39;factory_girl_rails&#39;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  gem <span class="st">&#39;capybara&#39;</span></a>
+<a class="sourceLine" id="cb2-5" title="5">  gem <span class="st">&#39;database_cleaner&#39;</span></a>
+<a class="sourceLine" id="cb2-6" title="6"><span class="kw">end</span></a></code></pre></div>
+<h2 id="run-generators">Run generators</h2>
+<p>Next, run the RSpec generator to create the initial skeleton:</p>
+<pre><code>rails generate rspec:install</code></pre>
+<h2 id="configure-capybara">Configure Capybara</h2>
+<p>To make Capybara available from within RSpec specs, add the following line to <code>spec/rails_helper.rb</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb4-1" title="1"><span class="co"># spec/rails_helper.rb</span></a>
+<a class="sourceLine" id="cb4-2" title="2">require <span class="st">&#39;capybara/rails&#39;</span></a></code></pre></div>
+<p>Your Capybara feature specs will also need a home, add the <code>spec/features/</code> directory:</p>
+<pre><code>mkdir spec/features</code></pre>
+<h2 id="configure-database_cleaner">Configure <code>database_cleaner</code></h2>
+<p>Next, make the following adjustments to <code>spec/rails_helper.rb</code> to integrate the <code>database_cleaner</code> gem:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb6-1" title="1">config.use_transactional_fixtures = <span class="dv">false</span></a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb7-1" title="1"><span class="dt">RSpec</span>.configure <span class="kw">do</span> |config|</a>
+<a class="sourceLine" id="cb7-2" title="2"></a>
+<a class="sourceLine" id="cb7-3" title="3">  config.before(<span class="st">:suite</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-4" title="4">    <span class="dt">DatabaseCleaner</span>.clean_with(<span class="st">:truncation</span>)</a>
+<a class="sourceLine" id="cb7-5" title="5">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-6" title="6"></a>
+<a class="sourceLine" id="cb7-7" title="7">  config.before(<span class="st">:each</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-8" title="8">    <span class="dt">DatabaseCleaner</span>.strategy = <span class="st">:transaction</span></a>
+<a class="sourceLine" id="cb7-9" title="9">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-10" title="10"></a>
+<a class="sourceLine" id="cb7-11" title="11">  config.before(<span class="st">:each</span>, <span class="st">:js</span> =&gt; <span class="dv">true</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-12" title="12">    <span class="dt">DatabaseCleaner</span>.strategy = <span class="st">:truncation</span></a>
+<a class="sourceLine" id="cb7-13" title="13">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-14" title="14"></a>
+<a class="sourceLine" id="cb7-15" title="15">  config.before(<span class="st">:each</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-16" title="16">    <span class="dt">DatabaseCleaner</span>.start</a>
+<a class="sourceLine" id="cb7-17" title="17">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-18" title="18"></a>
+<a class="sourceLine" id="cb7-19" title="19">  config.after(<span class="st">:each</span>) <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-20" title="20">    <span class="dt">DatabaseCleaner</span>.clean</a>
+<a class="sourceLine" id="cb7-21" title="21">  <span class="kw">end</span></a>
+<a class="sourceLine" id="cb7-22" title="22"></a>
+<a class="sourceLine" id="cb7-23" title="23"><span class="kw">end</span></a></code></pre></div>
+<h2 id="the-.rspec-file">The <code>.rspec</code> file</h2>
+<p>By default, RSpec generates a <code>.rspec</code> file in your app’s root. This allows you to set different command line options (see <code>rspec -h</code>) that will be automatically picked up. The default <code>.rspec</code> includes the <code>--warnings</code> option, which can be really noisy even in a brand new Rails app. If you see a lot of warnings later on, you can hide them by removing this line.</p>
+<h2 id="generating-specs">Generating specs</h2>
+<p>The next time you run <code>rails generate resource</code>, Rails should already be configured to generate specs under <code>spec/</code> and factories under <code>spec/factories</code>.</p>
+<p>Let’s try that out with the proverbial Rails blog example:</p>
+<pre><code>rails generate resource post title:string content:text published:boolean</code></pre>
+<p>If everything’s correctly configured, you should see something close to this:</p>
+<pre><code>invoke  active_record
+create    db/migrate/20140630160246_create_posts.rb
+create    app/models/post.rb
+invoke    rspec
+create      spec/models/post_spec.rb
+invoke      factory_girl
+create        spec/factories/posts.rb
+invoke  controller
+create    app/controllers/posts_controller.rb
+invoke    erb
+create      app/views/posts
+invoke    rspec
+create      spec/controllers/posts_controller_spec.rb
+invoke    helper
+create      app/helpers/posts_helper.rb
+invoke      rspec
+create        spec/helpers/posts_helper_spec.rb
+invoke    assets
+invoke      coffee
+create        app/assets/javascripts/posts.js.coffee
+invoke      scss
+create        app/assets/stylesheets/posts.css.scss
+invoke  resource_route
+ route    resources :posts</code></pre>
+<p>Note the factory at <code>spec/factories/posts.rb</code>, the model spec at <code>specs/models/post_spec.rb</code>, and the controller spec at <code>specs/controllers/post_controller_spec.rb</code>.</p>
+<p>With the new specs in place, try running <code>rspec</code> (you can also run <code>rake</code>), to see the results. So far, you should only see a few pending specs:</p>
+<pre><code>**
+
+Pending:
+  PostsHelper add some examples to (or delete) ./spec/helpers/posts_helper_spec.rb
+    # Not yet implemented
+    # ./spec/helpers/posts_helper_spec.rb:14
+  Post add some examples to (or delete) ./spec/models/post_spec.rb
+    # Not yet implemented
+    # ./spec/models/post_spec.rb:4</code></pre>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>Now that everything is set up, we’re ready to write some tests. Stay tuned for Part 2. In the meantime, here are a few more resources worth a read:</p>
+<ul>
+<li><a href="http://guides.rubyonrails.org/testing.html">A Guide to Testing Rails Application</a> — the Rails Guide to testing</li>
+<li>Thoughbot’s <em><a href="http://robots.thoughtbot.com/how-we-test-rails-applications">How We Test Rails Applications</a></em></li>
+<li>DHH’s <em><a href="http://david.heinemeierhansson.com/2014/tdd-is-dead-long-live-testing.html">TDD is dead. Long live testing.</a></em></li>
+</ul>]]></description>
+    <pubDate>Tue, 15 Jul 2014 00:00:00 UT</pubDate>
+    <guid>https://ndreynolds.com/posts/2014-07-15-rspec-intro-part1.html</guid>
+    <dc:creator>Nick Reynolds</dc:creator>
+</item>
+
+    </channel>
+</rss>

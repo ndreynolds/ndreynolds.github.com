@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Learning Haskell via Advent of Code | Nick Reynolds</title>
+    <link rel="stylesheet" href="../css/tufte.css" type="text/css" media="all" />
+<link rel="stylesheet" href="../css/pandoc.css" type="text/css" media="all" />
+<link rel="stylesheet" href="../css/pandoc-solarized.css" type="text/css" media="all" />
+<link rel="stylesheet" href="../css/site.css" type="text/css" media="all" />
+<script type="text/javascript" src="../js/life.js"></script>
+
+  </head>
+  <body>
+    <article>
+      <a href="../">&laquo; Home</a>
+
+      <section>
+        
+<header>
+<h1 class="title">Learning Haskell via Advent of Code</h1>
+
+
+<p class="byline">February  5, 2019</p>
+
+</header>
+
+
+<p><img src="../images/aoc.gif" /><span><label for="sn-1" class="margin-toggle">⊕</label><input type="checkbox" id="sn-1" class="margin-toggle" /><span class="marginnote"> My Goblins and Elves do battle in Day 15<br />
+<br />
+</span></span></p>
+<p>Inspired by <a href="https://www.forrestthewoods.com/blog/learning-rust-via-advent-of-code/">this post</a> from Forest Smith on his experience learning Rust with Advent of Code, I wanted to share my own experience working through the problems this past December to improve my Haskell skills.</p>
+<!--more-->
+<h1 id="advent-of-code">Advent of Code</h1>
+<p><a href="https://adventofcode.com/">Advent of Code</a> (AoC) is a collection of holiday-themed programming puzzles structured as an Advent calendar—one puzzle is released each day at midnight from December 1st until the 25th. The puzzles are a bit reminiscent of the <a href="https://projecteuler.net/">Project Euler</a> problems, but with less math and more fun. The great thing about AoC is that there’s something for everyone. For those who like competitive programming, there’s a leaderboard tracking the 100 fastest users to solve each day’s puzzle. Others don’t compete, but just enjoy solving the puzzles or use them to learn something new.</p>
+<p>I decided to use the puzzles as an opportunity to learn some more Haskell. Haskell and I have had an off-and-on relationship the last several years. The first time I tried it (in 2014), my mind was blown by functional programming, pattern matching, type theory, and particularly Cabal “dependency hell”—the circle of hell that Dante must have forgotten about. Even back then, a part of me really liked Haskell, but I was just in over my head.</p>
+<p>Since then, Elixir has been my gateway drug into real world FP, and I can feel a lot of Haskell concepts starting to really click in my mind. Also, improvements to Cabal and new tools like Stack have made the experience smoother for Haskell beginners.</p>
+<h1 id="my-experience-with-haskell">My Experience with Haskell</h1>
+<p>All of my solutions can be found in <a href="https://github.com/ndreynolds/advent-of-code">my repository</a> on GitHub. Towards the end, my holiday travels got in the way, so I only managed 18 of the 25 puzzles, but I’m still quite proud of that.<span><label for="sn-2" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-2" class="margin-toggle" /><span class="sidenote">At first, I was so motivated that I wanted to do them all in <a href="https://racket-lang.org/">Racket</a>, too, but that proved a bit too ambitious. I think I’ll try Racket next year.<br />
+<br />
+</span></span></p>
+<h2 id="structuring-solutions">Structuring Solutions</h2>
+<p>I spend so much time fiddling with build tools and manifests at work that I find it really satisfying to just pass a program directly to the compiler.</p>
+<p>I decided to write each day’s solution (usually two parts) as a single <code>DayN.hs</code> file that I’d run with <code>runhaskell</code> or compile with <code>ghc</code>. I generally stuck to what’s included in the GHC distribution (mostly <a href="http://hackage.haskell.org/package/base"><code>base</code></a> and <a href="http://hackage.haskell.org/package/containers"><code>containers</code></a>) so that the programs were free of additional dependencies. (I made a few exceptions that I’ll mention later.)</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb1-1" title="1">$ <span class="ex">runhaskell</span> Day01.hs</a></code></pre></div>
+<h2 id="working-with-io">Working with I/O</h2>
+<p>The AoC puzzles have a personalized input file that you need to download and run against your program. In addition to the input file, there is usually a simplified example to check the results of your algorithm against. It’s a good fit for the Unix philosophy of having programs exchange data via the standard streams, as I could just redirect different files to the program’s stdin, as well as use pipes for some light preprocessing. So most of the programs are run like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb2-1" title="1">$ <span class="ex">./Day25</span> <span class="op">&lt;</span> 25.txt</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="ex">420</span></a></code></pre></div>
+<p>Haskell’s Prelude provides a very elegant abstraction around the processing of standard IO streams: <code>interact :: (String -&gt; String) -&gt; IO ()</code> (<a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Prelude.html#v:interact">docs</a>). You just provide a function that accepts stdin as a <code>String</code> and returns another <code>String</code> to be written to stdout, and it handles the rest. I used variations of this pattern in most solutions:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb3-2" title="2">main <span class="fu">=</span> <span class="fu">interact</span> (<span class="fu">show</span> <span class="fu">.</span> solve <span class="fu">.</span> parse)</a></code></pre></div>
+<h2 id="parsing-input-to-regex-or-not-to-regex">Parsing Input: To regex or not to regex</h2>
+<p>The different puzzles called for different approaches to parsing input. Some of the inputs were simple enough that <code>lines</code> and a little transformation did the job, whereas others called for a regular expression or a real parser. (Sometimes the parsing was even the biggest challenge.)</p>
+<p>Many in the Haskell community tend to prefer parser combinators like <a href="https://downloads.haskell.org/~ghc/latest/docs/html/libraries/parsec-3.1.13.0/Text-Parsec.html">Parsec</a> and its derivatives for jobs that programmers in other languages would use a regular expression for. One sign of this (or maybe the reason) is that you’ll find Parsec bundled with GHC, but not any regex libraries.</p>
+<p>I actually quite like regexps (short ones, anyway) and I think they can be the right tool for a lot of jobs. For example, Day 10 required parsing position and velocity pairs from the following input:</p>
+<pre><code>position=&lt;-50310,  10306&gt; velocity=&lt; 5, -1&gt;
+position=&lt;-20029,  -9902&gt; velocity=&lt; 2,  1&gt;
+position=&lt; 10277, -30099&gt; velocity=&lt;-1,  3&gt;</code></pre>
+<p>Regular expressions are particularly handy for extracting numbers from text with a lot of extraneous information and whitespace you don’t care about.</p>
+<p>So I figured out how to use them in Haskell, which is a bit of <a href="https://gabebw.com/blog/2015/10/11/regular-expressions-in-haskell">a challenge itself</a>. I actually went in a different direction than the linked post and used <a href="http://hackage.haskell.org/package/regex-tdfa"><code>Text.Regex.TDFA</code></a>, which is a new, pure Haskell regex engine.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1">positionRe <span class="fu">=</span> <span class="st">&quot;position=&lt;[[:space:]]*(-?[0-9]+),[[:space:]]*(-?[0-9]+)&gt;&quot;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">(_, _, _, captures) <span class="fu">=</span> str <span class="fu">=~</span> positionRe</a></code></pre></div>
+<p>In other cases, using parser combinators really was the right approach. For example, in Day 4, my task was to sneak into Santa’s prototype suit manufacturing lab, which involved parsing the “event log” of different elf guards as they’d start their shifts, fall asleep, wake up, and so on:</p>
+<pre><code>[1518-11-20 23:58] Guard #1229 begins shift
+[1518-11-21 00:51] falls asleep
+[1518-11-21 00:53] wakes up
+[1518-11-21 00:57] falls asleep
+[1518-11-21 00:59] wakes up
+[1518-11-22 00:00] Guard #2441 begins shift
+[1518-11-22 00:12] falls asleep
+[1518-11-22 00:13] wakes up
+[1518-11-22 00:17] falls asleep
+[1518-11-22 00:46] wakes up
+[1518-11-22 00:52] falls asleep
+[1518-11-22 00:54] wakes up</code></pre>
+<p>I’m not saying you couldn’t solve this with a regex, but the fact that each guard can take an arbitrary number of naps would make it very ugly. So I went with <a href="http://hackage.haskell.org/package/megaparsec">Megaparsec</a>, which I’d already used in another project. It’s more or less the same API as Parsec, but includes some fixes and enhancements that make it a bit nicer to work with. So far it’s been a real pleasure to use.</p>
+<p>To parse the event log, I cobbled together the following:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">data</span> <span class="dt">Shift</span> <span class="fu">=</span> <span class="dt">Shift</span> <span class="dt">Integer</span> [<span class="dt">ShiftEvent</span>] <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb7-2" title="2"></a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="kw">data</span> <span class="dt">ShiftEvent</span> <span class="fu">=</span> <span class="dt">Asleep</span> <span class="dt">Minutes</span></a>
+<a class="sourceLine" id="cb7-4" title="4">                <span class="fu">|</span> <span class="dt">Awake</span> <span class="dt">Minutes</span></a>
+<a class="sourceLine" id="cb7-5" title="5">                <span class="kw">deriving</span> <span class="dt">Show</span></a>
+<a class="sourceLine" id="cb7-6" title="6"></a>
+<a class="sourceLine" id="cb7-7" title="7"><span class="kw">type</span> <span class="dt">Minutes</span> <span class="fu">=</span> <span class="dt">Integer</span></a>
+<a class="sourceLine" id="cb7-8" title="8"></a>
+<a class="sourceLine" id="cb7-9" title="9"><span class="kw">type</span> <span class="dt">Parser</span> <span class="fu">=</span> <span class="dt">Parsec</span> <span class="dt">Void</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb7-10" title="10"></a>
+<a class="sourceLine" id="cb7-11" title="11"><span class="ot">minutes ::</span> <span class="dt">Parser</span> <span class="dt">Minutes</span></a>
+<a class="sourceLine" id="cb7-12" title="12">minutes <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-13" title="13">  char <span class="ch">'['</span></a>
+<a class="sourceLine" id="cb7-14" title="14">  skipSomeTill (digitChar <span class="fu">&lt;|&gt;</span> char <span class="ch">'-'</span> <span class="fu">&lt;|&gt;</span> spaceChar) (char <span class="ch">':'</span>)</a>
+<a class="sourceLine" id="cb7-15" title="15">  <span class="fu">min</span> <span class="ot">&lt;-</span> count <span class="dv">2</span> digitChar</a>
+<a class="sourceLine" id="cb7-16" title="16">  char <span class="ch">']'</span></a>
+<a class="sourceLine" id="cb7-17" title="17">  <span class="fu">return</span> <span class="fu">$</span> <span class="fu">read</span> <span class="fu">min</span></a>
+<a class="sourceLine" id="cb7-18" title="18"></a>
+<a class="sourceLine" id="cb7-19" title="19"><span class="ot">slumber ::</span> <span class="dt">Parser</span> [<span class="dt">ShiftEvent</span>]</a>
+<a class="sourceLine" id="cb7-20" title="20">slumber <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-21" title="21">  asleepAt <span class="ot">&lt;-</span> minutes</a>
+<a class="sourceLine" id="cb7-22" title="22">  string <span class="st">&quot; falls asleep\n&quot;</span></a>
+<a class="sourceLine" id="cb7-23" title="23">  awakeAt <span class="ot">&lt;-</span> minutes</a>
+<a class="sourceLine" id="cb7-24" title="24">  string <span class="st">&quot; wakes up\n&quot;</span></a>
+<a class="sourceLine" id="cb7-25" title="25">  <span class="fu">return</span> <span class="fu">$</span> [<span class="dt">Asleep</span> asleepAt, <span class="dt">Awake</span> awakeAt]</a>
+<a class="sourceLine" id="cb7-26" title="26"></a>
+<a class="sourceLine" id="cb7-27" title="27"><span class="ot">shift ::</span> <span class="dt">Parser</span> <span class="dt">Shift</span></a>
+<a class="sourceLine" id="cb7-28" title="28">shift <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-29" title="29">  _start <span class="ot">&lt;-</span> minutes</a>
+<a class="sourceLine" id="cb7-30" title="30">  string <span class="st">&quot; Guard #&quot;</span></a>
+<a class="sourceLine" id="cb7-31" title="31">  guardId <span class="ot">&lt;-</span> some digitChar</a>
+<a class="sourceLine" id="cb7-32" title="32">  string <span class="st">&quot; begins shift\n&quot;</span></a>
+<a class="sourceLine" id="cb7-33" title="33">  events <span class="ot">&lt;-</span> many (try slumber)</a>
+<a class="sourceLine" id="cb7-34" title="34">  <span class="fu">return</span> <span class="fu">$</span> <span class="dt">Shift</span> (<span class="fu">read</span> guardId) (<span class="fu">concat</span> events)</a>
+<a class="sourceLine" id="cb7-35" title="35"></a>
+<a class="sourceLine" id="cb7-36" title="36"><span class="ot">shifts ::</span> <span class="dt">Parser</span> [<span class="dt">Shift</span>]</a>
+<a class="sourceLine" id="cb7-37" title="37">shifts <span class="fu">=</span> many shift</a></code></pre></div>
+<p>While the whitespace handling is a bit sloppy here, it has some nice properties. It’s not possible to parse an <code>Awake</code> event followed by another <code>Awake</code> event. Parser combinators make it very easy to express a particular order that must be followed.</p>
+<h2 id="profiling-slow-code">Profiling Slow Code</h2>
+<p>Most of the puzzles have two parts. It’s common to be able to brute force the solution to Part 1, but to need to step back and think about how to more efficiently solve Part 2. It’s a little bit like this:</p>
+<ul>
+<li><strong>Part 1</strong>: Compute <span class="math inline"><em>f</em><em>a</em><em>c</em><em>t</em><em>o</em><em>r</em><em>i</em><em>a</em><em>l</em>(<em>n</em>)</span>.</li>
+<li><strong>Part 2</strong>: Compute <span class="math inline"><em>f</em><em>a</em><em>c</em><em>t</em><em>o</em><em>r</em><em>i</em><em>a</em><em>l</em>(<em>n</em><sup>1000</sup>)</span>.</li>
+</ul>
+<p>In other cases, my initial solution was just plain slow because I’d used the wrong data structures or missed a critical bottleneck. For these cases, I used GHC’s <a href="https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/profiling.html">built-in profiling tools</a>.</p>
+<p>GHC provides two particularly useful profiling options:</p>
+<ul>
+<li><code>-prof</code> - Compiles for cost-center profiling. This means profiling is turned on, but adding this alone doesn’t define any cost centers. Cost centers are just program annotations that flag a particular expression for profiling. They can be added manually with <code>{-# SCC myId #-}</code>.</li>
+<li><code>-fprof-auto</code> - This option automatically gives all bindings SCC annotations (with the exception of those referenced by an <code>INLINE</code> pragma), so you don’t need to add any manually.</li>
+</ul>
+<p>At this point, we can compile a program for profiling, but we still need to tell the runtime system (RTS) to generate the profile when the program is ran. This can be done (among other ways), via command-line arguments:</p>
+<ul>
+<li><code>+RTS</code> - Demarcates the beginning of the RTS options (which are removed from the argv given to your program). Ended with <code>-RTS</code> or automatically when the end of arguments is reached.</li>
+<li><code>-p</code> - RTS option that produces a time profile (i.e. where is the program spending its time?).</li>
+<li><code>-h</code> - RTS option that produces a heap profile (i.e. memory usage).</li>
+</ul>
+<p>My <a href="https://adventofcode.com/2018/day/15">Day 15</a> solution (<a href="https://github.com/ndreynolds/advent-of-code/blob/master/2018/haskell/Day15.hs">source</a>), which produced the GIF at the top of the post, was initially horribly slow.</p>
+<p>The puzzle involves creating a simulation of a battle between an army of elves and an army of goblins in true dungeon crawler style. Each unit on the map has a sort of deterministic AI. Units each have turns in a pre-defined series, and each turn they can either attack an enemy in range, or move one square towards the nearest enemy. Finding the nearest enemy is definitely the tough part.</p>
+<p>Units cannot move through walls (they’re fighting in a cave) and they cannot move through each other—so the simulation requires finding, for each unit, the shortest path to an enemy.<span><label for="sn-3" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-3" class="margin-toggle" /><span class="sidenote">In the event of multiple shortest paths to an enemy, the directions specify that the next enemy in reading order (i.e., left-to-right, then top-to-bottom) is chosen. This all means calculating the paths in each round is <span class="math inline"><em>O</em>(<em>n</em><sup>2</sup>)</span>, as we have to calculate the paths between all units in order to find the shortest ones.<br />
+<br />
+</span></span></p>
+<p>From the puzzle directions:</p>
+<pre><code>Targets:      In range:     Reachable:    Nearest:      Chosen:
+#######       #######       #######       #######       #######
+#E..G.#       #E.?G?#       #E.@G.#       #E.!G.#       #E.+G.#
+#...#.#  --&gt;  #.?.#?#  --&gt;  #.@.#.#  --&gt;  #.!.#.#  --&gt;  #...#.#
+#.G.#G#       #?G?#G#       #@G@#G#       #!G.#G#       #.G.#G#
+#######       #######       #######       #######       #######</code></pre>
+<p>In order to find the shortest paths, I used <a href="https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm">Dijkstra’s algorithm</a>. My implementation was correct on small sample inputs, but was too slow to run on my real input. I knew something was wrong, so I used the profiler to see what my program was up to:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb9-1" title="1">$ <span class="ex">ghc</span> -prof -fprof-auto Day15.hs</a>
+<a class="sourceLine" id="cb9-2" title="2">$ <span class="ex">./Day15</span> +RTS -p <span class="op">&lt;</span> 15.txt</a></code></pre></div>
+<p>Running the second line generates a <code>Day15.prof</code> file in the current directory.</p>
+<p>By inspecting the report, I found the problem. Dijkstra’s algorithm works by keeping a set of unvisited neighbor nodes and visiting these in order by shortest distance. I had actually used <code>Data.Set</code> to store these unvisited neighbors and was using <code>minimumBy</code> to find the next one to visit. Unsurprisingly, this was a very hot code path, and my program was spending 99% of its time there.</p>
+<p>A priority queue makes this operation efficient. Elements of the queue are ranked by their priority—here, by their distance. I used the <a href="http://hackage.haskell.org/package/PSQueue"><code>Data.PSQueue</code></a> implementation, which supports <span class="math inline"><em>O</em>(1)</span> retrieval of the element with the lowest priority, as well as <span class="math inline"><em>O</em>(log <em>n</em>)</span> insertion, deletion and update operations.</p>
+<p>My program now produces the following time profile, which is quite reasonable:</p>
+<pre><code>	Tue Feb  5 20:35 2019 Time and Allocation Profiling Report  (Final)
+
+	   Day15 +RTS -p -hc -RTS
+
+	total time  =       60.23 secs   (60231 ticks @ 1000 us, 1 processor)
+	total alloc = 75,047,638,704 bytes  (excludes profiling overheads)
+
+COST CENTRE              MODULE       SRC                               %time %alloc
+
+lookup                   Data.PSQueue Data/PSQueue.hs:(117,1)-(125,37)   33.4   35.4
+open                     Main         Day15.hs:127:1-55                  20.3    1.6
+insert                   Data.PSQueue Data/PSQueue.hs:(139,1)-(149,49)   12.9   21.0
+adjustWithKey            Data.PSQueue Data/PSQueue.hs:(190,1)-(198,62)   12.1   13.0
+deleteMin                Data.PSQueue Data/PSQueue.hs:(317,1)-(318,43)    6.2    7.8
+dijkstra.update          Main         Day15.hs:(115,3)-(121,31)           6.1    5.9
+dijkstra.prune           Main         Day15.hs:(108,3)-(113,33)           1.6    4.2
+adjacents                Main         Day15.hs:139:1-67                   1.3    2.2
+dijkstra.prune.neighbors Main         Day15.hs:112:5-78                   1.1    2.2
+openAdjacents            Main         Day15.hs:142:1-61                   1.1    2.0
+dijkstra.initQ           Main         Day15.hs:(99,3)-(100,78)            0.5    1.8</code></pre>
+<p>The only red flag is the <code>60.23 sec</code> it takes to run! I expected some overhead, but not quite so much. Compiling again without the profiling options and with <code>-O2</code> brings the total runtime down to a few seconds.</p>
+<h2 id="pattern-matching">Pattern Matching</h2>
+<p>I learned from Elixir &amp; Erlang how powerful pattern matching can be. Luckily Haskell gets us most<span><label for="sn-4" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-4" class="margin-toggle" /><span class="sidenote">One of the things I seem to miss the most is being able to match for equality of two values by using the same variable twice. For example, in Erlang the match expression <code>{x, x} = {0, 0}</code> succeeds, whereas <code>{x, x} = {0, 1}</code> does not (match error). In Haskell, given a similar <code>(x, x) = (0, 0)</code>, the compiler complains about multiple declarations of <code>x</code>.<br />
+<br />
+</span></span> of the way there and with types to boot.</p>
+<p>In the puzzles, I often found it lovely to just transliterate the mapping in the puzzle directions to one in Haskell.</p>
+<p>For example, Day 12 called for building a kind of single-row <a href="https://en.wikipedia.org/wiki/Cellular_automaton">cellular automaton</a><span><label for="sn-5" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-5" class="margin-toggle" /><span class="sidenote">For example, Conway’s Game of Life is a cellular automaton with a similarly defined rule-set.<br />
+<br />
+</span></span> from an initial state with rules for whether each cell is occupied (alive) or unoccupied (dead) in the next generation:</p>
+<pre><code>initial state: #..#.#..##......###...###
+
+...## =&gt; #
+..#.. =&gt; #
+.#... =&gt; #
+.#.#. =&gt; #
+.#.## =&gt; #
+.##.. =&gt; #
+.#### =&gt; #
+#.#.# =&gt; #
+#.### =&gt; #
+##.#. =&gt; #
+##.## =&gt; #
+###.. =&gt; #
+###.# =&gt; #
+####. =&gt; #</code></pre>
+<p>The above rules only cover the “alive” cases; anything else is assumed dead in the next round. I was pretty happy with how this converted to Haskell, where I defined a function to advance a block of cells to the next generation based on the rules above:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="ot">transform ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb12-2" title="2">transform (<span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;####.&quot;</span></a>
+<a class="sourceLine" id="cb12-3" title="3">transform (<span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;####.&quot;</span></a>
+<a class="sourceLine" id="cb12-4" title="4">transform (<span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;###..&quot;</span></a>
+<a class="sourceLine" id="cb12-5" title="5">transform (<span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;#.###&quot;</span></a>
+<a class="sourceLine" id="cb12-6" title="6">transform (<span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;#.##.&quot;</span></a>
+<a class="sourceLine" id="cb12-7" title="7">transform (<span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;.####&quot;</span></a>
+<a class="sourceLine" id="cb12-8" title="8">transform (<span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;.##.#&quot;</span></a>
+<a class="sourceLine" id="cb12-9" title="9">transform (<span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;.##.#&quot;</span></a>
+<a class="sourceLine" id="cb12-10" title="10">transform (<span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="st">&quot;.&quot;</span>) <span class="fu">=</span> <span class="st">&quot;.##..&quot;</span></a>
+<a class="sourceLine" id="cb12-11" title="11">transform (<span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;..###&quot;</span></a>
+<a class="sourceLine" id="cb12-12" title="12">transform (<span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;..#.#&quot;</span></a>
+<a class="sourceLine" id="cb12-13" title="13">transform (<span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> <span class="ch">'#'</span> <span class="fu">:</span> <span class="st">&quot;#&quot;</span>) <span class="fu">=</span> <span class="st">&quot;..###&quot;</span></a>
+<a class="sourceLine" id="cb12-14" title="14">transform (l2  <span class="fu">:</span> l1  <span class="fu">:</span>  _  <span class="fu">:</span> r1  <span class="fu">:</span> r2 ) <span class="fu">=</span> l2 <span class="fu">:</span> l1 <span class="fu">:</span> <span class="ch">'.'</span> <span class="fu">:</span> r1 <span class="fu">:</span> r2</a></code></pre></div>
+<h2 id="algebraic-data-types">Algebraic Data Types</h2>
+<p>Algebraic data types are wonderfully expressive for certain problems. I sorely miss them when working in dynamic languages.</p>
+<p>For example, on Day 13, which involved building an ASCII rail network, I used the ADTs to capture all the possible states my tracks could be in:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb13-1" title="1"><span class="kw">data</span> <span class="dt">Track</span> <span class="fu">=</span> <span class="dt">Track</span> <span class="dt">TrackType</span> <span class="dt">TrackState</span></a>
+<a class="sourceLine" id="cb13-2" title="2">           <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-3" title="3"></a>
+<a class="sourceLine" id="cb13-4" title="4"><span class="co">-- | Tracks can point in different directions or be intersections</span></a>
+<a class="sourceLine" id="cb13-5" title="5"><span class="kw">data</span> <span class="dt">TrackType</span> <span class="fu">=</span> <span class="dt">TVertical</span>     <span class="co">-- |</span></a>
+<a class="sourceLine" id="cb13-6" title="6">               <span class="fu">|</span> <span class="dt">THorizontal</span>   <span class="co">-- -</span></a>
+<a class="sourceLine" id="cb13-7" title="7">               <span class="fu">|</span> <span class="dt">TDiagonalUp</span>   <span class="co">-- /</span></a>
+<a class="sourceLine" id="cb13-8" title="8">               <span class="fu">|</span> <span class="dt">TDiagonalDown</span> <span class="co">-- \</span></a>
+<a class="sourceLine" id="cb13-9" title="9">               <span class="fu">|</span> <span class="dt">TIntersection</span> <span class="co">-- +</span></a>
+<a class="sourceLine" id="cb13-10" title="10">               <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-11" title="11"></a>
+<a class="sourceLine" id="cb13-12" title="12"><span class="co">-- | Tracks can either be clear or occupied by a cart or crash</span></a>
+<a class="sourceLine" id="cb13-13" title="13"><span class="kw">data</span> <span class="dt">TrackState</span> <span class="fu">=</span> <span class="dt">SCart</span> <span class="dt">CartDirection</span> <span class="dt">IntersectionRule</span></a>
+<a class="sourceLine" id="cb13-14" title="14">                <span class="fu">|</span> <span class="dt">SCrash</span></a>
+<a class="sourceLine" id="cb13-15" title="15">                <span class="fu">|</span> <span class="dt">SClear</span></a>
+<a class="sourceLine" id="cb13-16" title="16">                <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-17" title="17"></a>
+<a class="sourceLine" id="cb13-18" title="18"><span class="co">-- | Carts can move in four directions</span></a>
+<a class="sourceLine" id="cb13-19" title="19"><span class="kw">data</span> <span class="dt">CartDirection</span> <span class="fu">=</span> <span class="dt">DUp</span></a>
+<a class="sourceLine" id="cb13-20" title="20">                   <span class="fu">|</span> <span class="dt">DDown</span></a>
+<a class="sourceLine" id="cb13-21" title="21">                   <span class="fu">|</span> <span class="dt">DLeft</span></a>
+<a class="sourceLine" id="cb13-22" title="22">                   <span class="fu">|</span> <span class="dt">DRight</span></a>
+<a class="sourceLine" id="cb13-23" title="23">                   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-24" title="24"></a>
+<a class="sourceLine" id="cb13-25" title="25"><span class="co">-- | Carts cycle through rules for which way to turn at an intersection</span></a>
+<a class="sourceLine" id="cb13-26" title="26"><span class="kw">data</span> <span class="dt">IntersectionRule</span> <span class="fu">=</span> <span class="dt">RLeft</span></a>
+<a class="sourceLine" id="cb13-27" title="27">                      <span class="fu">|</span> <span class="dt">RStraight</span></a>
+<a class="sourceLine" id="cb13-28" title="28">                      <span class="fu">|</span> <span class="dt">RRight</span></a>
+<a class="sourceLine" id="cb13-29" title="29">                      <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</a>
+<a class="sourceLine" id="cb13-30" title="30"></a>
+<a class="sourceLine" id="cb13-31" title="31"><span class="kw">type</span> <span class="dt">Coord</span> <span class="fu">=</span> (<span class="dt">Integer</span>, <span class="dt">Integer</span>)</a>
+<a class="sourceLine" id="cb13-32" title="32"></a>
+<a class="sourceLine" id="cb13-33" title="33"><span class="kw">type</span> <span class="dt">TrackNetwork</span> <span class="fu">=</span> <span class="dt">Map</span> <span class="dt">Coord</span> <span class="dt">Track</span></a></code></pre></div>
+<p>It was then very helpful to have the compiler’s help in making sure I’d handled all the possible values of union types—for example, every track type above in the logic to move a cart.</p>
+<p>I think even more beneficial than type checking was how designing the types for each problem helped me to plan the solution before writing any real code. Thinking in terms of types makes it possible to start at the very top and drill your way down.</p>
+<p>In the Day 13 puzzle, the objective for the first part was—given a number of carts hurtling down the tracks, eventually right at one another—to find the first cart crash. A simple network of tracks looks like this:</p>
+<pre><code>   x axis -&gt;
+
+y  /-&gt;-\
+|  |   |  /----\
+v  | /-+--+-\  |
+   | | |  | v  |
+   \-+-/  \-+--/
+     \------/</code></pre>
+<p>So I started there with the assumption that I’d need a type for the entire network of tracks, and a type for the coordinate pair where the crash occurs:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="ot">firstCrash ::</span> <span class="dt">TrackNetwork</span> <span class="ot">-&gt;</span> <span class="dt">Coord</span></a></code></pre></div>
+<p>This then led to the definition of the track network as a map of coordinates to tracks:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1"><span class="kw">type</span> <span class="dt">TrackNetwork</span> <span class="fu">=</span> <span class="dt">Map</span> <span class="dt">Coord</span> <span class="dt">Track</span></a></code></pre></div>
+<p>Then I compiled all the information about tracks from the description into the track type. In order to package everything up together—the track direction and whatever’s on top of it—I decided to also store the carts with the tracks themselves:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">data</span> <span class="dt">Track</span> <span class="fu">=</span> <span class="dt">Track</span> <span class="dt">TrackType</span> <span class="dt">TrackState</span></a>
+<a class="sourceLine" id="cb17-2" title="2"></a>
+<a class="sourceLine" id="cb17-3" title="3"><span class="co">-- | Tracks can point in different directions or be intersections</span></a>
+<a class="sourceLine" id="cb17-4" title="4"><span class="kw">data</span> <span class="dt">TrackType</span> <span class="fu">=</span> <span class="dt">TVertical</span>     <span class="co">-- |</span></a>
+<a class="sourceLine" id="cb17-5" title="5">               <span class="fu">|</span> <span class="dt">THorizontal</span>   <span class="co">-- -</span></a>
+<a class="sourceLine" id="cb17-6" title="6">               <span class="fu">|</span> <span class="dt">TDiagonalUp</span>   <span class="co">-- /</span></a>
+<a class="sourceLine" id="cb17-7" title="7">               <span class="fu">|</span> <span class="dt">TDiagonalDown</span> <span class="co">-- \</span></a>
+<a class="sourceLine" id="cb17-8" title="8">               <span class="fu">|</span> <span class="dt">TIntersection</span> <span class="co">-- +</span></a>
+<a class="sourceLine" id="cb17-9" title="9"></a>
+<a class="sourceLine" id="cb17-10" title="10"><span class="co">-- | Tracks can either be clear or occupied by a cart or crash</span></a>
+<a class="sourceLine" id="cb17-11" title="11"><span class="kw">data</span> <span class="dt">TrackState</span> <span class="fu">=</span> <span class="dt">SCart</span> <span class="dt">CartDirection</span> <span class="dt">IntersectionRule</span></a>
+<a class="sourceLine" id="cb17-12" title="12">                <span class="fu">|</span> <span class="dt">SCrash</span></a>
+<a class="sourceLine" id="cb17-13" title="13">                <span class="fu">|</span> <span class="dt">SClear</span></a></code></pre></div>
+<p>From here, I continued with carts, which travel in a particular direction and the cycling intersection rule that tells the carts which way to turn.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb18-1" title="1"><span class="co">-- | Carts can move in four directions</span></a>
+<a class="sourceLine" id="cb18-2" title="2"><span class="kw">data</span> <span class="dt">CartDirection</span> <span class="fu">=</span> <span class="dt">DUp</span></a>
+<a class="sourceLine" id="cb18-3" title="3">                   <span class="fu">|</span> <span class="dt">DDown</span></a>
+<a class="sourceLine" id="cb18-4" title="4">                   <span class="fu">|</span> <span class="dt">DLeft</span></a>
+<a class="sourceLine" id="cb18-5" title="5">                   <span class="fu">|</span> <span class="dt">DRight</span></a>
+<a class="sourceLine" id="cb18-6" title="6"></a>
+<a class="sourceLine" id="cb18-7" title="7"><span class="co">-- | Carts cycle through rules for which way to turn at an intersection</span></a>
+<a class="sourceLine" id="cb18-8" title="8"><span class="kw">data</span> <span class="dt">IntersectionRule</span> <span class="fu">=</span> <span class="dt">RLeft</span></a>
+<a class="sourceLine" id="cb18-9" title="9">                      <span class="fu">|</span> <span class="dt">RStraight</span></a>
+<a class="sourceLine" id="cb18-10" title="10">                      <span class="fu">|</span> <span class="dt">RRight</span></a></code></pre></div>
+<p>By starting with the types, I had a solid foundation to write the logic to parse the tracks and simulate the cart travel. This is something I’m definitely starting to miss in dynamic languages. There I can still plan the structure of nested data structures, but I can’t encode the rules into its definition in quite the same way.</p>
+<h2 id="plotting-data-with-gnuplot">Plotting Data with Gnuplot</h2>
+<p>For a few different puzzles, I found it useful to plot data generated by the program in order to visualize it.</p>
+<p>There are a number of different Haskell libraries for creating charts that rely on different backends. For example, the <a href="http://hackage.haskell.org/package/Chart">Chart</a> library is backed by Cairo and provides a number of different chart types and export formats.</p>
+<p>After looking around, I settled on <a href="http://hackage.haskell.org/package/easyplot-1.0/docs/Graphics-EasyPlot.html">easyplot</a>, which wraps the <a href="http://www.gnuplot.info/"><code>gnuplot</code></a> command line utility. The package can generate <code>.dat</code> files with the plot data in the Gnuplot-supported format and can run the X11. For example, the following plots two points:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb19-1" title="1"><span class="fu">&gt;</span> plot <span class="dt">X11</span> <span class="fu">$</span> <span class="dt">Data2D</span> [<span class="dt">Title</span> <span class="st">&quot;Sample Data&quot;</span>] [] [(<span class="dv">0</span>, <span class="dv">1</span>), (<span class="dv">5</span>, <span class="dv">2</span>)]</a></code></pre></div>
+<p>It’s also possible to pass functions:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb20-1" title="1"><span class="fu">&gt;</span> plot <span class="dt">X11</span> <span class="fu">sin</span></a></code></pre></div>
+<p>Plots can also be rendered to PNG instead by swapping <code>X11</code> for <code>(PNG "sin.png")</code>:</p>
+<p><img src="../images/sin.png" /></p>
+<p>Gnuplot is ancient, so it doesn’t produce the prettiest charts, but I found it and its Haskell wrapper lovely for their simplicity. Without passing any options, they already produce something reasonable. This is great for trying to make sense of data without getting bogged down in the the details.</p>
+<p>With the <code>.dat</code> file generated by the Haskell wrapper, <code>gnuplot</code> can also be ran directly, which allows for configuring plotting on the command line, e.g.:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb21-1" title="1">$ <span class="ex">gnuplot</span> -e <span class="st">'set term x11 persist; set size 0.5,0.15; plot &quot;plot1.dat&quot;'</span></a></code></pre></div>
+<p>Other programs can also render Gnuplot <code>.dat</code> files, so there’s a lot you can do with the data once it’s out of your Haskell program.</p>
+<p>I used this strategy for Day 10, which involved finding a message formed by shooting stars as they align for a split second. I didn’t really know what to expect—I wasn’t sure if all the stars would cluster together or only some of them, so I decided to plot the coordinates when alignment reached a certain threshold and take a look. It worked pretty well:</p>
+<p><img src="../images/stars.png" /><span><label for="sn-6" class="margin-toggle">⊕</label><input type="checkbox" id="sn-6" class="margin-toggle" /><span class="marginnote"> In case you’re wondering, as I did for a long while, the message is upside down.<br />
+<br />
+</span></span></p>
+<p>Here I used the <code>gnuplot</code> command above to squeeze the y-axis to make the letters readable.</p>
+<h2 id="formatting-code">Formatting Code</h2>
+<p>While it has nothing to do with puzzles, automatic code formatting has become an important part of my workflow.</p>
+<p>This past year, I’ve been using Elixir’s <code>mix format</code> (inspired by tools like <code>gofmt</code>) to format all the Elixir code I write. I used to think aligning the code to make it “pretty” was my job, but now I’ve realized that’s a big waste of time.</p>
+<p>Haskell doesn’t yet and may never have a canonical formatter included with GHC, but there are some different packages to fill this need.</p>
+<p>I used <a href="https://github.com/lspitzner/brittany">brittany</a> to format my solutions and was impressed with the results. I didn’t always agree with it’s choices, but I think that’s the trade-off when using a formatter.</p>
+
+      </section>
+    </article>
+
+    <section>
+      <footer>
+  &copy; 2019 Nick Reynolds
+  <br />
+
+  <a href="mailto:ndreynolds@gmail.com">Email</a> /
+  <a href="https://github.com/ndreynolds">GitHub</a> /
+  <a href="https://keybase.io/ndreynolds">Keybase</a> /
+  <a href="http://ndreynolds.com">ndreynolds.com</a>
+  <br />
+
+  <a href="../rss.xml">RSS Feed</a>
+  <br />
+
+  Generated by <a href="http://jaspervdj.be/hakyll/">hakyll</a>.
+</footer>
+
+    </section>
+  </body>
+</html>
