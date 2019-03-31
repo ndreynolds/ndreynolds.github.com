@@ -512,8 +512,8 @@ and provides a number of different chart types and export formats.
 
 After looking around, I settled on [easyplot][20], which wraps the
 [`gnuplot`][21] command line utility. The package can generate `.dat` files with
-the plot data in the Gnuplot-supported format and can run the X11. For example,
-the following plots two points:
+the plot data in the Gnuplot-supported format and can run the X11 viewer. For
+example, the following plots two points:
 
 ```haskell
 > plot X11 $ Data2D [Title "Sample Data"] [] [(0, 1), (5, 2)]

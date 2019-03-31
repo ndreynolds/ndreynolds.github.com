@@ -15,7 +15,7 @@ feature specs.
 ## But first, why write tests?
 
 I was initially very wary of unit-testing. While I knew that I needed to make
-sure the app worked, I was skeptical of time tradeoff. The first few tests can
+sure the app worked, I was skeptical of the time tradeoff. The first few tests can
 seem like more trouble than they're worth, and quite honestly, those first few
 probably are more trouble than they're worth. But after a while, writing tests
 becomes second nature. I think it can easily take less time to write automated

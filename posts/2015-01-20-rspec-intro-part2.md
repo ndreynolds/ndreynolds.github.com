@@ -26,17 +26,14 @@ for your users and prevent regressions as you develop it.
 In this article, we'll write tests that touch on each part of the Rails MVC
 architecture:
 
-Model Specs
-  ~ Test your Rails models---scopes, validations, custom methods
-  ~ `spec/models/post_spec.rb`
-
-Controller Specs
-  ~ Test your Rails controllers---CRUD, requests, sessions, param shuffling, formats
-  ~ `spec/controllers/posts_controller_spec.rb`
-
-Feature (a.k.a. Acceptance) Specs
-  ~ Test your Rails app from the browser as a user---use cases, interactions, and maybe even some JavaScript
-  ~ `spec/features/post_management_spec.rb
+* **Model specs** test your Rails models---scopes, validations, custom methods
+  * Ex: `spec/models/post_spec.rb`
+* **Controller specs** test your Rails controllers---CRUD, requests, sessions,
+  param shuffling, formats
+  * Ex: `spec/controllers/posts_controller_spec.rb`
+* **Feature (a.k.a. Acceptance) specs** test your Rails app from the browser as
+  a user---use cases, interactions, and maybe even some JavaScript
+  * Ex: `spec/features/post_management_spec.rb`
 
 In addition to those, while not covered here, you might also decide to write
 unit tests for other parts of your app:
