@@ -31,23 +31,20 @@
 <p>Before diving in, I will say that some of this may be a bit opinionated. When I’m testing a Rails app, my goal is to get the most bang for my buck—that is, the most test coverage for the fewest lines of test code. If you find that a test requiring extensive mocking or brittle networking logic begins taking up more than its share of your development time, in my book it’s fine to just <code>git rm</code> it and move on. Likewise, while getting to 100% coverage is a noble goal, it isn’t always as realistic (in the face of schedule and budget constraints) or as helpful (think: future refactoring) as it might seem. The real objective isn’t to hit some arbitrary percentage—it’s to make your app more reliable for your users and prevent regressions as you develop it.</p>
 <h2 id="overview">Overview</h2>
 <p>In this article, we’ll write tests that touch on each part of the Rails MVC architecture:</p>
-<dl>
-<dt>Model Specs</dt>
-<dd>Test your Rails models—scopes, validations, custom methods
-</dd>
-<dd><code>spec/models/post_spec.rb</code>
-</dd>
-<dt>Controller Specs</dt>
-<dd>Test your Rails controllers—CRUD, requests, sessions, param shuffling, formats
-</dd>
-<dd><code>spec/controllers/posts_controller_spec.rb</code>
-</dd>
-<dt>Feature (a.k.a. Acceptance) Specs</dt>
-<dd>Test your Rails app from the browser as a user—use cases, interactions, and maybe even some JavaScript
-</dd>
-<dd>`spec/features/post_management_spec.rb
-</dd>
-</dl>
+<ul>
+<li><strong>Model specs</strong> test your Rails models—scopes, validations, custom methods
+<ul>
+<li>Ex: <code>spec/models/post_spec.rb</code></li>
+</ul></li>
+<li><strong>Controller specs</strong> test your Rails controllers—CRUD, requests, sessions, param shuffling, formats
+<ul>
+<li>Ex: <code>spec/controllers/posts_controller_spec.rb</code></li>
+</ul></li>
+<li><strong>Feature (a.k.a. Acceptance) specs</strong> test your Rails app from the browser as a user—use cases, interactions, and maybe even some JavaScript
+<ul>
+<li>Ex: <code>spec/features/post_management_spec.rb</code></li>
+</ul></li>
+</ul>
 <p>In addition to those, while not covered here, you might also decide to write unit tests for other parts of your app:</p>
 <ul>
 <li>library code</li>
