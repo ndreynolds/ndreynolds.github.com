@@ -7,7 +7,7 @@ import           Text.Pandoc.SideNote           ( usingSideNotes )
 
 main :: IO ()
 main = hakyll $ do
-  forM_ ["js/*", "images/*", "fonts/*"] $ \path -> match path $ do
+  forM_ ["js/*", "images/*", "fonts/**/*"] $ \path -> match path $ do
     route idRoute
     compile copyFileCompiler
 
